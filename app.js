@@ -85,7 +85,16 @@ function go(pageId) {
     homeFilterType = "giorno";
     homeFilterValue = todayISO();
     setActiveTab("home", "giorno");
-    renderHomeFilterControl();
+    document.getElementById("exportBackupBtn").addEventListener("click", exportBackup);
+  document.getElementById("importBackupBtn").addEventListener("click", () => {
+    document.getElementById("backupFileInput").click();
+  });
+  document.getElementById("backupFileInput").addEventListener("change", (e) => {
+    importBackupFile(e.target.files[0]);
+    e.target.value = "";
+  });
+
+  renderHomeFilterControl();
     renderHome();
   }
 
@@ -291,6 +300,15 @@ function setHomeFiltroTipo(type) {
   if (type === "mese") homeFilterValue = currentMonthISO();
   if (type === "anno") homeFilterValue = currentYearISO();
   setActiveTab("home", type);
+  document.getElementById("exportBackupBtn").addEventListener("click", exportBackup);
+  document.getElementById("importBackupBtn").addEventListener("click", () => {
+    document.getElementById("backupFileInput").click();
+  });
+  document.getElementById("backupFileInput").addEventListener("change", (e) => {
+    importBackupFile(e.target.files[0]);
+    e.target.value = "";
+  });
+
   renderHomeFilterControl();
   renderHome();
 }
@@ -1056,11 +1074,76 @@ function renderCalendar() {
       homeFilterType = "giorno";
       homeFilterValue = btn.dataset.calendarDay;
       setActiveTab("home", "giorno");
-      renderHomeFilterControl();
+      document.getElementById("exportBackupBtn").addEventListener("click", exportBackup);
+  document.getElementById("importBackupBtn").addEventListener("click", () => {
+    document.getElementById("backupFileInput").click();
+  });
+  document.getElementById("backupFileInput").addEventListener("change", (e) => {
+    importBackupFile(e.target.files[0]);
+    e.target.value = "";
+  });
+
+  renderHomeFilterControl();
       renderHome();
       go("homePage");
     });
   });
+}
+
+
+function exportBackup() {
+  const backupData = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    doctors,
+    entries,
+    invoiceStates
+  };
+
+  const blob = new Blob([JSON.stringify(backupData, null, 2)], { type: "application/json" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  const datePart = todayISO();
+  a.href = url;
+  a.download = `backup-anvamed-${datePart}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function importBackupFile(file) {
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+
+      if (!data || !Array.isArray(data.doctors) || !Array.isArray(data.entries) || typeof data.invoiceStates !== "object") {
+        alert("File backup non valido");
+        return;
+      }
+
+      const ok = confirm("Importando il backup verranno sostituiti i dati attuali. Continuare?");
+      if (!ok) return;
+
+      doctors = data.doctors;
+      entries = data.entries;
+      invoiceStates = data.invoiceStates || {};
+      currentDoctorId = null;
+      editingEntryId = null;
+
+      saveAll();
+      renderAll();
+      go("homePage");
+      alert("Backup importato correttamente");
+    } catch (err) {
+      alert("Errore durante l'importazione del backup");
+    }
+  };
+
+  reader.readAsText(file);
 }
 
 function renderAll() {
@@ -1143,6 +1226,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   document.getElementById("calendarMonth").value = currentMonthISO();
   document.getElementById("calendarMonth").addEventListener("change", renderCalendar);
+
+  document.getElementById("exportBackupBtn").addEventListener("click", exportBackup);
+  document.getElementById("importBackupBtn").addEventListener("click", () => {
+    document.getElementById("backupFileInput").click();
+  });
+  document.getElementById("backupFileInput").addEventListener("change", (e) => {
+    importBackupFile(e.target.files[0]);
+    e.target.value = "";
+  });
 
   renderHomeFilterControl();
   renderReportFilterControl();
