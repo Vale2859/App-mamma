@@ -1,0 +1,113 @@
+*{margin:0;padding:0;box-sizing:border-box;}
+
+body{
+font-family:-apple-system;
+background:linear-gradient(#eef3f7,#e4edf3);
+color:#1c1c1e;
+}
+
+.header{text-align:center;padding:20px;font-weight:700;}
+
+.page{display:none;padding:15px;}
+.page.active{display:block;}
+
+.top-cards{display:flex;gap:10px;margin-bottom:15px;}
+
+.card{
+flex:1;
+background:white;
+border-radius:20px;
+padding:15px;
+text-align:center;
+box-shadow:0 10px 25px rgba(0,0,0,0.05);
+}
+
+.green{border-left:5px solid #2ecc71;}
+.purple{border-left:5px solid #8e44ad;}
+
+.main-btn{
+width:100%;
+padding:16px;
+border:none;
+border-radius:20px;
+background:linear-gradient(#2ecc71,#3498db);
+color:white;
+font-weight:600;
+margin-bottom:15px;
+}
+
+.totali{display:flex;gap:10px;margin-bottom:15px;}
+
+.totali div{
+flex:1;
+background:white;
+border-radius:20px;
+padding:15px;
+text-align:center;
+}
+
+.utile{color:#2ecc71;font-weight:bold;}
+
+.medico-card{
+background:white;
+border-radius:20px;
+padding:15px;
+margin-bottom:10px;
+}
+
+.giorni{display:flex;justify-content:space-between;margin:15px 0;}
+
+.giorni span{
+width:38px;height:38px;border-radius:50%;
+display:flex;align-items:center;justify-content:center;
+background:#e6ebef;
+}
+
+.giorni .active{background:linear-gradient(#2ecc71,#3498db);color:white;}
+
+.stats{display:flex;gap:10px;margin-bottom:15px;}
+
+.stats div{
+flex:1;
+background:white;
+border-radius:15px;
+padding:10px;
+text-align:center;
+}
+
+.menu{
+position:fixed;bottom:0;width:100%;
+background:white;
+display:flex;justify-content:space-around;
+padding:10px;
+}
+
+.popup{
+position:fixed;top:0;width:100%;height:100%;
+background:rgba(0,0,0,0.4);
+display:flex;align-items:flex-end;
+}
+
+.popup-box{
+background:white;width:100%;
+border-radius:25px 25px 0 0;
+padding:20px;
+}
+
+.popup-box input,.popup-box select{
+width:100%;padding:12px;margin-bottom:10px;
+border-radius:10px;border:1px solid #ddd;
+}
+
+.perc{display:flex;gap:10px;}
+
+.actions{display:flex;gap:10px;}
+
+.actions button{flex:1;padding:14px;border:none;border-radius:15px;}
+
+.actions button:last-child{
+background:linear-gradient(#2ecc71,#3498db);
+color:white;
+}
+
+.hidden{display:none;}
