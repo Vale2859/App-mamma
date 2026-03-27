@@ -37,7 +37,7 @@
           <span class="btn-plus">＋</span>
           <span class="btn-text-wrap">
             <span class="btn-title">NUOVA REGISTRAZIONE</span>
-            <span class="btn-subtitle">Aggiungi subito una prestazione</span>
+            <span class="btn-subtitle">Oggi o giorni passati</span>
           </span>
         </button>
 
@@ -69,6 +69,7 @@
           </div>
         </div>
 
+        <div class="page-subtitle" id="homePeriodoLabel">Giorno/periodo selezionato</div>
         <div id="homeMedici" class="cards-list"></div>
       </section>
 
@@ -79,8 +80,8 @@
           <button class="small-action-btn" type="button" onclick="addMedico()">+ Nuovo</button>
         </div>
 
-        <div class="page-subtitle">Gestione completa dei medici della struttura</div>
-        <div id="mediciList" class="cards-list"></div>
+        <div class="page-subtitle">Elenco medici struttura</div>
+        <div id="mediciListSimple" class="simple-list"></div>
       </section>
 
       <!-- DETTAGLIO MEDICO -->
@@ -101,6 +102,10 @@
             <label for="detailMonth">Mese selezionato</label>
             <input id="detailMonth" type="month" />
           </div>
+
+          <button class="small-action-btn" type="button" onclick="openQuickAddForCurrentDoctor()">
+            + Aggiungi prestazione
+          </button>
 
           <button class="small-action-btn" type="button" onclick="printDettaglioMedico()">
             🖨️ Stampa medico
@@ -130,6 +135,7 @@
       <section id="reportPage" class="page">
         <div class="page-head">
           <h2>Report</h2>
+          <button class="small-action-btn" type="button" onclick="printReport()">🖨️ Stampa</button>
         </div>
 
         <div class="toolbar">
@@ -145,6 +151,7 @@
         </div>
 
         <div class="page-subtitle" id="reportPeriodoLabel">Report periodo selezionato</div>
+        <div id="reportPieWrap" class="pie-wrap"></div>
         <div id="reportGrid" class="report-grid"></div>
       </section>
 
@@ -152,17 +159,18 @@
       <section id="fatturePage" class="page">
         <div class="page-head">
           <h2>Fatture</h2>
+          <button class="small-action-btn" type="button" onclick="printFatture()">🖨️ Stampa</button>
         </div>
 
         <div class="fatture-filters">
           <div class="filter-control">
-            <label for="fattureMonthFrom">Da mese</label>
-            <input id="fattureMonthFrom" type="month" />
+            <label for="fattureDateFrom">Da giorno</label>
+            <input id="fattureDateFrom" type="date" />
           </div>
 
           <div class="filter-control">
-            <label for="fattureMonthTo">A mese</label>
-            <input id="fattureMonthTo" type="month" />
+            <label for="fattureDateTo">A giorno</label>
+            <input id="fattureDateTo" type="date" />
           </div>
 
           <div class="filter-control">
@@ -176,11 +184,7 @@
           </div>
         </div>
 
-        <div class="fatture-actions">
-          <button class="small-action-btn" type="button" onclick="printFatture()">🖨️ Stampa fatture</button>
-        </div>
-
-        <div class="page-subtitle" id="fatturePeriodoLabel">Riepilogo fatture del periodo selezionato</div>
+        <div class="page-subtitle" id="fatturePeriodoLabel">Fatture del periodo selezionato</div>
         <div id="fattureChart" class="report-grid"></div>
         <div id="fattureList" class="fatture-grid"></div>
       </section>
@@ -267,7 +271,5 @@
       </div>
     </div>
   </div>
-
-  <script src="app.js"></script>
 </body>
 </html>
