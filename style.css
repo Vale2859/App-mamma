@@ -1007,3 +1007,17 @@ button{
     padding:22px;
   }
 }
+
+
+.backup-tools{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  margin-bottom:14px;
+}
+
+.import-label{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
