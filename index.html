@@ -15,42 +15,37 @@
 
     <main class="main-content">
       <!-- HOME -->
-      <section id="home" class="page active">
+      <section id="homePage" class="page active">
         <div class="top-cards">
           <div class="card stat-card">
             <p>Mese in corso</p>
             <h2 id="meseCorrenteTotale">€0.00</h2>
           </div>
-
           <div class="card stat-card green">
             <p>Totale struttura</p>
             <h2 id="meseCorrenteStruttura">€0.00</h2>
           </div>
-
           <div class="card stat-card purple">
             <p>Totale medici</p>
             <h2 id="meseCorrenteMedici">€0.00</h2>
           </div>
         </div>
 
-        <button class="main-btn" type="button" onclick="openPrestazionePopup()">
+        <button class="main-btn" type="button" id="newRegistrationBtn">
           <span class="btn-plus">＋</span>
           <span class="btn-text-wrap">
             <span class="btn-title">NUOVA REGISTRAZIONE</span>
-            <span class="btn-subtitle">Oggi o giorni passati</span>
+            <span class="btn-subtitle">Giorno corrente o giorni passati</span>
           </span>
         </button>
 
         <div class="toolbar">
           <div class="period-tabs">
-            <button id="tab-giorno" class="tab active" type="button" onclick="setHomeFiltroTipo('giorno')">Giorno</button>
-            <button id="tab-mese" class="tab" type="button" onclick="setHomeFiltroTipo('mese')">Mese</button>
-            <button id="tab-anno" class="tab" type="button" onclick="setHomeFiltroTipo('anno')">Anno</button>
+            <button id="homeTabGiorno" class="tab active" type="button">Giorno</button>
+            <button id="homeTabMese" class="tab" type="button">Mese</button>
+            <button id="homeTabAnno" class="tab" type="button">Anno</button>
           </div>
-
-          <button class="calendar-open-btn" type="button" onclick="go('calendarioPage')">
-            📅 Calendario
-          </button>
+          <button class="calendar-open-btn" type="button" id="openCalendarBtn">📅 Calendario</button>
         </div>
 
         <div class="filter-box">
@@ -60,106 +55,95 @@
         <div class="totali">
           <div class="card total-card">
             <p>Guadagno totale</p>
-            <h2 id="guadagno">€0.00</h2>
+            <h2 id="homeGuadagno">€0.00</h2>
           </div>
-
           <div class="card total-card">
             <p>Utile struttura</p>
-            <h2 id="utile" class="utile">€0.00</h2>
+            <h2 id="homeUtile" class="utile">€0.00</h2>
           </div>
         </div>
 
         <div class="page-subtitle" id="homePeriodoLabel">Giorno/periodo selezionato</div>
-        <div id="homeMedici" class="cards-list"></div>
+        <div id="homeWorkedDoctors" class="cards-list"></div>
       </section>
 
       <!-- MEDICI -->
       <section id="mediciPage" class="page">
         <div class="page-head">
           <h2>Medici</h2>
-          <button class="small-action-btn" type="button" onclick="addMedico()">+ Nuovo</button>
+          <button class="small-action-btn" type="button" id="addDoctorBtn">+ Nuovo</button>
         </div>
 
-        <div class="page-subtitle">Elenco medici struttura</div>
-        <div id="mediciListSimple" class="simple-list"></div>
+        <div class="page-subtitle">Solo nomi con modifica ed eliminazione</div>
+        <div id="doctorsSimpleList" class="simple-list"></div>
       </section>
 
       <!-- DETTAGLIO MEDICO -->
-      <section id="dettaglioPage" class="page">
+      <section id="doctorDetailPage" class="page">
         <div class="page-head">
-          <button class="back-btn" type="button" onclick="go('mediciPage')">←</button>
-          <h2 id="dettaglioNome">Medico</h2>
+          <button class="back-btn" type="button" id="backToDoctorsBtn">←</button>
+          <h2 id="doctorDetailName">Medico</h2>
         </div>
 
-        <div class="detail-filter-head">
-          <div class="detail-period-label">Disponibilità settimanale</div>
-        </div>
-
-        <div id="giorniMedico" class="giorni"></div>
+        <div class="page-subtitle">Disponibilità settimanale</div>
+        <div id="doctorAvailability" class="giorni"></div>
 
         <div class="detail-tools">
           <div class="filter-control">
-            <label for="detailMonth">Mese selezionato</label>
-            <input id="detailMonth" type="month" />
+            <label for="doctorDetailMonth">Mese selezionato</label>
+            <input id="doctorDetailMonth" type="month" />
           </div>
 
-          <button class="small-action-btn" type="button" onclick="openQuickAddForCurrentDoctor()">
-            + Aggiungi prestazione
-          </button>
-
-          <button class="small-action-btn" type="button" onclick="printDettaglioMedico()">
-            🖨️ Stampa medico
-          </button>
+          <button class="small-action-btn" type="button" id="quickAddDoctorBtn">+ Aggiungi prestazione</button>
+          <button class="small-action-btn" type="button" id="printDoctorBtn">🖨️ Stampa medico</button>
         </div>
 
         <div class="stats">
           <div class="card stats-card">
             <span class="stats-label">Guadagno medico</span>
-            <strong id="detTotM">€0.00</strong>
+            <strong id="doctorTotMedico">€0.00</strong>
           </div>
           <div class="card stats-card">
             <span class="stats-label">Guadagno struttura</span>
-            <strong id="detTotS">€0.00</strong>
+            <strong id="doctorTotStruttura">€0.00</strong>
           </div>
           <div class="card stats-card">
             <span class="stats-label">Prestazioni</span>
-            <strong id="detCount">0</strong>
+            <strong id="doctorTotPrestazioni">0</strong>
           </div>
         </div>
 
-        <div class="page-subtitle" id="detailMonthLabel">Prestazioni del mese selezionato</div>
-        <div id="detailPrestazioni" class="cards-list"></div>
+        <div class="page-subtitle" id="doctorMonthLabel">Prestazioni del mese selezionato</div>
+        <div id="doctorMonthPrestazioni" class="cards-list"></div>
       </section>
 
       <!-- REPORT -->
       <section id="reportPage" class="page">
         <div class="page-head">
           <h2>Report</h2>
-          <button class="small-action-btn" type="button" onclick="printReport()">🖨️ Stampa</button>
+          <button class="small-action-btn" type="button" id="printReportBtn">🖨️ Stampa</button>
         </div>
 
-        <div class="toolbar">
-          <div class="period-tabs">
-            <button id="report-tab-giorno" class="tab active" type="button" onclick="setReportFiltroTipo('giorno')">Giorno</button>
-            <button id="report-tab-mese" class="tab" type="button" onclick="setReportFiltroTipo('mese')">Mese</button>
-            <button id="report-tab-anno" class="tab" type="button" onclick="setReportFiltroTipo('anno')">Anno</button>
-          </div>
+        <div class="period-tabs">
+          <button id="reportTabGiorno" class="tab active" type="button">Giorno</button>
+          <button id="reportTabMese" class="tab" type="button">Mese</button>
+          <button id="reportTabAnno" class="tab" type="button">Anno</button>
         </div>
 
         <div class="filter-box">
           <div id="reportFilterControlWrap"></div>
         </div>
 
-        <div class="page-subtitle" id="reportPeriodoLabel">Report periodo selezionato</div>
+        <div class="page-subtitle" id="reportPeriodoLabel">Periodo selezionato</div>
         <div id="reportPieWrap" class="pie-wrap"></div>
-        <div id="reportGrid" class="report-grid"></div>
+        <div id="reportCards" class="report-grid"></div>
       </section>
 
       <!-- FATTURE -->
       <section id="fatturePage" class="page">
         <div class="page-head">
           <h2>Fatture</h2>
-          <button class="small-action-btn" type="button" onclick="printFatture()">🖨️ Stampa</button>
+          <button class="small-action-btn" type="button" id="printInvoicesBtn">🖨️ Stampa</button>
         </div>
 
         <div class="fatture-filters">
@@ -167,12 +151,10 @@
             <label for="fattureDateFrom">Da giorno</label>
             <input id="fattureDateFrom" type="date" />
           </div>
-
           <div class="filter-control">
             <label for="fattureDateTo">A giorno</label>
             <input id="fattureDateTo" type="date" />
           </div>
-
           <div class="filter-control">
             <label for="fattureStatusFilter">Stato</label>
             <select id="fattureStatusFilter">
@@ -185,14 +167,14 @@
         </div>
 
         <div class="page-subtitle" id="fatturePeriodoLabel">Fatture del periodo selezionato</div>
-        <div id="fattureChart" class="report-grid"></div>
+        <div id="fattureSummary" class="report-grid"></div>
         <div id="fattureList" class="fatture-grid"></div>
       </section>
 
       <!-- CALENDARIO -->
-      <section id="calendarioPage" class="page">
+      <section id="calendarPage" class="page">
         <div class="page-head">
-          <button class="back-btn" type="button" onclick="go('home')">←</button>
+          <button class="back-btn" type="button" id="backToHomeBtn">←</button>
           <h2>Calendario</h2>
         </div>
 
@@ -211,19 +193,19 @@
     </main>
 
     <footer class="menu">
-      <button class="menu-btn active" type="button" onclick="go('home', this)">
+      <button class="menu-btn active" data-page="homePage" type="button">
         <span class="menu-icon">🏠</span>
         <span class="menu-label">Home</span>
       </button>
-      <button class="menu-btn" type="button" onclick="go('mediciPage', this)">
+      <button class="menu-btn" data-page="mediciPage" type="button">
         <span class="menu-icon">👨‍⚕️</span>
         <span class="menu-label">Medici</span>
       </button>
-      <button class="menu-btn" type="button" onclick="go('reportPage', this)">
+      <button class="menu-btn" data-page="reportPage" type="button">
         <span class="menu-icon">📊</span>
         <span class="menu-label">Report</span>
       </button>
-      <button class="menu-btn" type="button" onclick="go('fatturePage', this)">
+      <button class="menu-btn" data-page="fatturePage" type="button">
         <span class="menu-icon">🧾</span>
         <span class="menu-label">Fatture</span>
       </button>
@@ -235,22 +217,22 @@
     <div class="popup-box">
       <div class="popup-head">
         <h2 id="popupTitle">Nuova Registrazione</h2>
-        <button class="close-btn" type="button" onclick="closePrestazionePopup()">✕</button>
+        <button class="close-btn" type="button" id="closePopupBtn">✕</button>
       </div>
 
-      <select id="medico"></select>
-      <input id="prestazione" type="text" placeholder="Prestazione" />
-      <input id="data" type="date" />
-      <input id="importo" type="number" step="0.01" placeholder="Importo" />
+      <select id="popupDoctorSelect"></select>
+      <input id="popupPrestazione" type="text" placeholder="Prestazione" />
+      <input id="popupData" type="date" />
+      <input id="popupImporto" type="number" step="0.01" placeholder="Importo" />
 
       <div class="perc">
         <div class="perc-group">
-          <label for="percM">% Medico</label>
-          <input id="percM" type="number" min="0" max="100" value="60" />
+          <label for="popupPercMedico">% Medico</label>
+          <input id="popupPercMedico" type="number" min="0" max="100" value="60" />
         </div>
         <div class="perc-group">
-          <label for="percS">% Struttura</label>
-          <input id="percS" type="number" min="0" max="100" value="40" />
+          <label for="popupPercStruttura">% Struttura</label>
+          <input id="popupPercStruttura" type="number" min="0" max="100" value="40" />
         </div>
       </div>
 
@@ -266,10 +248,12 @@
       </div>
 
       <div class="actions">
-        <button class="secondary-btn" type="button" onclick="closePrestazionePopup()">Annulla</button>
-        <button class="primary-btn" type="button" onclick="salvaPrestazione()">Salva</button>
+        <button class="secondary-btn" type="button" id="cancelPopupBtn">Annulla</button>
+        <button class="primary-btn" type="button" id="savePopupBtn">Salva</button>
       </div>
     </div>
   </div>
+
+  <script src="app.js"></script>
 </body>
 </html>
