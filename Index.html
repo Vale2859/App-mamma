@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ANVAMED</title>
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header class="header">ANVAMED</header>
+
+<main>
+
+<!-- HOME -->
+<section id="home" class="page active">
+
+<div class="top-cards">
+  <div class="card"><p>Mese</p><h2 id="mese">€0</h2></div>
+  <div class="card green"><p>Struttura</p><h2 id="struttura">€0</h2></div>
+  <div class="card purple"><p>Medici</p><h2 id="medici">€0</h2></div>
+</div>
+
+<button class="main-btn" onclick="openPopup()">+ NUOVA REGISTRAZIONE</button>
+
+<div class="totali">
+  <div><p>Guadagno</p><h2 id="guadagno">€0</h2></div>
+  <div><p>Utile</p><h2 id="utile" class="utile">€0</h2></div>
+</div>
+
+<div id="homeMedici"></div>
+
+</section>
+
+<!-- MEDICI -->
+<section id="mediciPage" class="page">
+
+<h2>👨‍⚕️ Medici</h2>
+<button class="main-btn" onclick="addMedico()">+ Nuovo Medico</button>
+
+<div id="mediciList"></div>
+
+</section>
+
+<!-- DETTAGLIO -->
+<section id="dettaglio" class="page">
+
+<button onclick="go('mediciPage')">⬅ Indietro</button>
+
+<h2 id="nome"></h2>
+
+<div id="giorni" class="giorni"></div>
+
+<div class="stats">
+  <div>👨‍⚕️ € <span id="totM"></span></div>
+  <div>🏥 € <span id="totS"></span></div>
+  <div>📋 <span id="count"></span></div>
+</div>
+
+<div id="prestazioni"></div>
+
+</section>
+
+<!-- REPORT -->
+<section id="reportPage" class="page">
+<h2>📊 Report</h2>
+<div id="report"></div>
+</section>
+
+<!-- FATTURE -->
+<section id="fatturePage" class="page">
+<h2>🧾 Fatture</h2>
+<div id="fattureList"></div>
+</section>
+
+</main>
+
+<footer class="menu">
+<button onclick="go('home')">🏠</button>
+<button onclick="go('mediciPage')">👨‍⚕️</button>
+<button onclick="go('reportPage')">📊</button>
+<button onclick="go('fatturePage')">🧾</button>
+</footer>
+
+<!-- POPUP -->
+<div id="popup" class="popup hidden">
+  <div class="popup-box">
+
+    <h2>Nuova Registrazione</h2>
+
+    <select id="medico"></select>
+
+    <input id="prestazione" placeholder="Prestazione">
+    <input id="data" type="date">
+    <input id="importo" type="number" placeholder="Importo">
+
+    <div class="perc">
+      <input id="percM" value="60">
+      <input id="percS" value="40">
+    </div>
+
+    <div class="actions">
+      <button onclick="closePopup()">Annulla</button>
+      <button onclick="salva()">Salva</button>
+    </div>
+
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
