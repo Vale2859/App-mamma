@@ -2,20 +2,15 @@
 <html lang="it">
 <head>
   <meta charset="UTF-8" />
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, viewport-fit=cover"
-  />
-  <title>ANVAMED</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ANVAMED Manager</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app-shell">
     <header class="header">
-      <div class="brand">
-        <div class="brand-title">ANVAMED</div>
-        <div class="brand-subtitle">Manager</div>
-      </div>
+      <div class="brand-title">ANVAMED</div>
+      <div class="brand-subtitle">MANAGER</div>
     </header>
 
     <main class="main-content">
@@ -23,22 +18,22 @@
       <section id="home" class="page active">
         <div class="top-cards">
           <div class="card stat-card">
-            <p>Mese</p>
-            <h2 id="mese">€0.00</h2>
+            <p>Mese in corso</p>
+            <h2 id="meseCorrenteTotale">€0.00</h2>
           </div>
 
           <div class="card stat-card green">
-            <p>Struttura</p>
-            <h2 id="struttura">€0.00</h2>
+            <p>Totale struttura</p>
+            <h2 id="meseCorrenteStruttura">€0.00</h2>
           </div>
 
           <div class="card stat-card purple">
-            <p>Medici</p>
-            <h2 id="medici">€0.00</h2>
+            <p>Totale medici</p>
+            <h2 id="meseCorrenteMedici">€0.00</h2>
           </div>
         </div>
 
-        <button class="main-btn" type="button" onclick="openPopup()">
+        <button class="main-btn" type="button" onclick="openPrestazionePopup()">
           <span class="btn-plus">＋</span>
           <span class="btn-text-wrap">
             <span class="btn-title">NUOVA REGISTRAZIONE</span>
@@ -46,14 +41,30 @@
           </span>
         </button>
 
+        <div class="toolbar">
+          <div class="period-tabs">
+            <button id="tab-giorno" class="tab active" type="button" onclick="setHomeFiltroTipo('giorno')">Giorno</button>
+            <button id="tab-mese" class="tab" type="button" onclick="setHomeFiltroTipo('mese')">Mese</button>
+            <button id="tab-anno" class="tab" type="button" onclick="setHomeFiltroTipo('anno')">Anno</button>
+          </div>
+
+          <button class="calendar-open-btn" type="button" onclick="go('calendarioPage')">
+            📅 Calendario
+          </button>
+        </div>
+
+        <div class="filter-box">
+          <div id="homeFilterControlWrap"></div>
+        </div>
+
         <div class="totali">
           <div class="card total-card">
-            <p>Guadagno</p>
+            <p>Guadagno totale</p>
             <h2 id="guadagno">€0.00</h2>
           </div>
 
           <div class="card total-card">
-            <p>Utile</p>
+            <p>Utile struttura</p>
             <h2 id="utile" class="utile">€0.00</h2>
           </div>
         </div>
@@ -65,39 +76,54 @@
       <section id="mediciPage" class="page">
         <div class="page-head">
           <h2>Medici</h2>
-          <button class="small-action-btn" type="button" onclick="addMedico()">
-            + Nuovo
-          </button>
+          <button class="small-action-btn" type="button" onclick="addMedico()">+ Nuovo</button>
         </div>
 
+        <div class="page-subtitle">Gestione completa dei medici della struttura</div>
         <div id="mediciList" class="cards-list"></div>
       </section>
 
-      <!-- DETTAGLIO -->
-      <section id="dettaglio" class="page">
+      <!-- DETTAGLIO MEDICO -->
+      <section id="dettaglioPage" class="page">
         <div class="page-head">
           <button class="back-btn" type="button" onclick="go('mediciPage')">←</button>
-          <h2 id="nome">Medico</h2>
+          <h2 id="dettaglioNome">Medico</h2>
         </div>
 
-        <div id="giorni" class="giorni"></div>
+        <div class="detail-filter-head">
+          <div class="detail-period-label">Disponibilità settimanale</div>
+        </div>
+
+        <div id="giorniMedico" class="giorni"></div>
+
+        <div class="detail-tools">
+          <div class="filter-control">
+            <label for="detailMonth">Mese selezionato</label>
+            <input id="detailMonth" type="month" />
+          </div>
+
+          <button class="small-action-btn" type="button" onclick="printDettaglioMedico()">
+            🖨️ Stampa medico
+          </button>
+        </div>
 
         <div class="stats">
           <div class="card stats-card">
-            <span class="stats-label">Medico</span>
-            <strong id="totM">0.00</strong>
+            <span class="stats-label">Guadagno medico</span>
+            <strong id="detTotM">€0.00</strong>
           </div>
           <div class="card stats-card">
-            <span class="stats-label">Struttura</span>
-            <strong id="totS">0.00</strong>
+            <span class="stats-label">Guadagno struttura</span>
+            <strong id="detTotS">€0.00</strong>
           </div>
           <div class="card stats-card">
             <span class="stats-label">Prestazioni</span>
-            <strong id="count">0</strong>
+            <strong id="detCount">0</strong>
           </div>
         </div>
 
-        <div id="prestazioni" class="cards-list"></div>
+        <div class="page-subtitle" id="detailMonthLabel">Prestazioni del mese selezionato</div>
+        <div id="detailPrestazioni" class="cards-list"></div>
       </section>
 
       <!-- REPORT -->
@@ -105,7 +131,21 @@
         <div class="page-head">
           <h2>Report</h2>
         </div>
-        <div id="report" class="cards-list"></div>
+
+        <div class="toolbar">
+          <div class="period-tabs">
+            <button id="report-tab-giorno" class="tab active" type="button" onclick="setReportFiltroTipo('giorno')">Giorno</button>
+            <button id="report-tab-mese" class="tab" type="button" onclick="setReportFiltroTipo('mese')">Mese</button>
+            <button id="report-tab-anno" class="tab" type="button" onclick="setReportFiltroTipo('anno')">Anno</button>
+          </div>
+        </div>
+
+        <div class="filter-box">
+          <div id="reportFilterControlWrap"></div>
+        </div>
+
+        <div class="page-subtitle" id="reportPeriodoLabel">Report periodo selezionato</div>
+        <div id="reportGrid" class="report-grid"></div>
       </section>
 
       <!-- FATTURE -->
@@ -113,7 +153,56 @@
         <div class="page-head">
           <h2>Fatture</h2>
         </div>
-        <div id="fattureList" class="cards-list"></div>
+
+        <div class="fatture-filters">
+          <div class="filter-control">
+            <label for="fattureMonthFrom">Da mese</label>
+            <input id="fattureMonthFrom" type="month" />
+          </div>
+
+          <div class="filter-control">
+            <label for="fattureMonthTo">A mese</label>
+            <input id="fattureMonthTo" type="month" />
+          </div>
+
+          <div class="filter-control">
+            <label for="fattureStatusFilter">Stato</label>
+            <select id="fattureStatusFilter">
+              <option value="tutti">Tutti</option>
+              <option value="da_fatturare">Da fatturare</option>
+              <option value="fatturato">Fatturato</option>
+              <option value="pagato">Pagato</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="fatture-actions">
+          <button class="small-action-btn" type="button" onclick="printFatture()">🖨️ Stampa fatture</button>
+        </div>
+
+        <div class="page-subtitle" id="fatturePeriodoLabel">Riepilogo fatture del periodo selezionato</div>
+        <div id="fattureChart" class="report-grid"></div>
+        <div id="fattureList" class="fatture-grid"></div>
+      </section>
+
+      <!-- CALENDARIO -->
+      <section id="calendarioPage" class="page">
+        <div class="page-head">
+          <button class="back-btn" type="button" onclick="go('home')">←</button>
+          <h2>Calendario</h2>
+        </div>
+
+        <div class="filter-control">
+          <label for="calendarMonth">Mese</label>
+          <input id="calendarMonth" type="month" />
+        </div>
+
+        <div class="calendar-legend">
+          <span><i class="dot dot-ok"></i> giorno con registrazioni</span>
+          <span><i class="dot dot-empty"></i> nessuna registrazione</span>
+        </div>
+
+        <div id="calendarGrid" class="calendar-grid"></div>
       </section>
     </main>
 
@@ -137,16 +226,15 @@
     </footer>
   </div>
 
-  <!-- POPUP -->
+  <!-- POPUP PRESTAZIONE -->
   <div id="popup" class="popup hidden">
     <div class="popup-box">
       <div class="popup-head">
-        <h2>Nuova Registrazione</h2>
-        <button class="close-btn" type="button" onclick="closePopup()">✕</button>
+        <h2 id="popupTitle">Nuova Registrazione</h2>
+        <button class="close-btn" type="button" onclick="closePrestazionePopup()">✕</button>
       </div>
 
       <select id="medico"></select>
-
       <input id="prestazione" type="text" placeholder="Prestazione" />
       <input id="data" type="date" />
       <input id="importo" type="number" step="0.01" placeholder="Importo" />
@@ -162,9 +250,20 @@
         </div>
       </div>
 
+      <div class="popup-preview">
+        <div>
+          <span>Guadagno medico</span>
+          <strong id="popupMedicoPreview">€0.00</strong>
+        </div>
+        <div>
+          <span>Guadagno struttura</span>
+          <strong id="popupStrutturaPreview">€0.00</strong>
+        </div>
+      </div>
+
       <div class="actions">
-        <button class="secondary-btn" type="button" onclick="closePopup()">Annulla</button>
-        <button class="primary-btn" type="button" onclick="salva()">Salva</button>
+        <button class="secondary-btn" type="button" onclick="closePrestazionePopup()">Annulla</button>
+        <button class="primary-btn" type="button" onclick="salvaPrestazione()">Salva</button>
       </div>
     </div>
   </div>
