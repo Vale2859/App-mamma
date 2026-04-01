@@ -1520,192 +1520,41 @@ body{
   }
 }
 
-.main-btn-expense{
-  background:linear-gradient(90deg,#f6c94c,#f2a83f);
-  color:#fff;
-  box-shadow:0 14px 30px rgba(242,168,63,.24);
-}
-
-.popup-box-compact{
-  max-width:460px;
-  border-radius:28px 28px 0 0;
-}
-
-.popup-subtitle{
-  color:var(--muted);
-  font-weight:700;
-  margin:-2px 0 12px;
-  font-size:.84rem;
-}
-
-.category-pills{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin:0 0 10px;
-}
-.category-pill{
-  border:none;
-  border-radius:999px;
-  padding:10px 12px;
-  background:#f2f6fa;
-  color:#52606d;
-  font-weight:800;
-  font-size:.8rem;
-}
-.category-pill.active{
-  background:linear-gradient(90deg,var(--green),var(--blue));
-  color:#fff;
-}
-.spesa-card{
-  background:#fff;
-  border-radius:20px;
-  box-shadow:var(--shadow);
-  padding:14px;
-}
-.spesa-top{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap:12px;
-}
-.spesa-name{
-  font-weight:900;
-  font-size:1rem;
-}
-.spesa-sub{
-  color:var(--muted);
-  font-size:.82rem;
-  font-weight:700;
-  margin-top:4px;
-}
-.spesa-importo{
-  font-weight:900;
-  font-size:1.02rem;
-  white-space:nowrap;
-}
-.spesa-chip{
-  display:inline-flex;
-  align-items:center;
-  gap:6px;
-  margin-top:8px;
-  border-radius:999px;
-  background:#f3f7fb;
-  padding:7px 10px;
-  font-size:.78rem;
-  font-weight:800;
-  color:#405163;
-}
-.trend-card{
-  background:#fff;
-  border-radius:22px;
-  box-shadow:var(--shadow);
-  padding:14px;
-}
-.trend-title{
-  font-weight:900;
-  margin-bottom:10px;
-}
-.trend-list{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
-.trend-row{
-  display:grid;
-  grid-template-columns:74px 1fr auto;
-  gap:10px;
-  align-items:center;
-}
-.trend-bar{
-  height:10px;
-  background:#eef3f8;
-  border-radius:999px;
-  overflow:hidden;
-}
-.trend-bar > span{
-  display:block;
-  height:100%;
-  border-radius:999px;
-  background:linear-gradient(90deg,var(--green),var(--blue));
-}
-.prestazione-row-sub{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-}
+html,body{overflow-x:hidden;}
+.header{padding-top:18px;}
+.brand-logo{width:132px;height:132px;object-fit:contain;display:block;margin:0 auto 10px;border-radius:32px;background:#fff;padding:10px;box-shadow:var(--shadow-soft);}
+.secondary-main-btn{width:100%;display:flex;align-items:center;gap:18px;padding:18px 22px;border-radius:34px;background:#fff;box-shadow:var(--shadow-soft);margin-top:14px;margin-bottom:8px;}
+.secondary-main-btn .btn-plus{color:#64748b;background:#eef2f6;}
+.menu{grid-template-columns:repeat(6,minmax(0,1fr)) !important;gap:2px;padding-left:6px;padding-right:6px;}
+.menu-btn{padding:8px 2px;min-width:0;}
+.menu-label{font-size:.64rem;line-height:1.05;white-space:nowrap;}
+.menu-icon{font-size:1rem;}
+.popup{overflow:hidden;touch-action:none;}
+.popup-box{overflow-y:auto;overflow-x:hidden;touch-action:pan-y;overscroll-behavior:contain;}
+.popup-box-compact{max-height:min(calc(var(--app-height) - 30px), 620px);}
+.giorni span{cursor:pointer; user-select:none;}
+.giorni span.active::after{content:"";display:block;width:8px;height:8px;border-radius:999px;background:#fff;margin:2px auto 0;}
+.expense-card .prestazione-title{font-size:1rem;}
 @media (max-width:390px){
-  .main-btn{padding:13px;}
-  .btn-title{font-size:.94rem;}
-  .btn-subtitle{font-size:.72rem;}
+  .brand-logo{width:116px;height:116px;}
+  .brand-title{font-size:3rem;}
+  .brand-subtitle{font-size:1.15rem;}
+  .menu-label{font-size:.58rem;}
+  .menu-icon{font-size:.95rem;}
+  .top-cards{gap:8px;}
 }
-
-
-/* Final fixes */
-html, body, .app-shell{overflow-x:hidden;}
-.header{padding-top:calc(10px + env(safe-area-inset-top));}
-.brand-logo-full{width:108px;height:108px;object-fit:contain;display:block;margin:0 auto 14px;border-radius:28px;background:#fff;padding:10px;box-shadow:var(--shadow);}
-.giorni span{position:relative;transition:transform .12s ease, box-shadow .12s ease, background .18s ease;box-shadow:inset 0 0 0 1px rgba(27,44,70,.05);}
-.giorni span:active{transform:scale(.96);}
-.giorni span.active{box-shadow:0 10px 20px rgba(45,140,255,.18);}
-.giorni span.active::after{content:"";position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#fff;opacity:.98;}
-.popup{overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:18px 12px calc(18px + env(safe-area-inset-bottom));}
-.popup-box{width:min(100%, 760px);max-width:100%;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;scrollbar-gutter:stable; margin:0 auto;}
-.popup-box *, .popup-box input, .popup-box select{max-width:100%;}
-.popup-box-compact{max-width:min(100%, 560px);}
-.popup-head{position:sticky;top:0;background:#fff;z-index:2;padding-bottom:8px;}
-.period-tabs .tab, .toolbar .tab{transition:background .16s ease, color .16s ease, transform .12s ease;}
-.period-tabs .tab:active, .toolbar .tab:active{transform:scale(.98);}
-.report-grid{align-items:stretch;}
-.report-card{min-height:108px;}
-.fatture-grid{display:grid;grid-template-columns:1fr;gap:12px;}
-.fattura-card{break-inside:avoid;page-break-inside:avoid;}
-.pie-card,.report-card,.fattura-card,.simple-medico-row,.prestazione-row,.medico-card,.category-row{break-inside:avoid;page-break-inside:avoid;}
 @media print{
   body{background:#fff !important;}
-  .app-shell{max-width:none !important;background:#fff !important;}
-  .header,.menu,.back-btn,.small-action-btn,.main-btn,.icon-btn,.popup,.pin-overlay,.detail-tools,.backup-tools,.calendar-open-btn{display:none !important;}
-  .main-content{padding:0 !important;}
+  .menu,.popup,.pin-overlay,.main-btn,.secondary-main-btn,.small-action-btn,.back-btn,.icon-btn,.calendar-open-btn,.period-tabs{display:none !important;}
+  .app-shell{max-width:none;box-shadow:none;background:#fff;}
+  .main-content{padding:0 0 0 0;overflow:visible;}
   .page{display:none !important;}
-  #reportPage.active,#fatturePage.active,#doctorDetailPage.active{display:block !important;}
-  #reportPage.active *,#fatturePage.active *,#doctorDetailPage.active *{visibility:visible !important;}
-  .filter-box,.period-tabs,.fatture-filters{display:block !important;margin:0 0 12px !important;}
-  .filter-control{background:#fff !important;box-shadow:none !important;border:1px solid #d9dee5 !important;break-inside:avoid;page-break-inside:avoid;}
-  .card,.pie-card,.fattura-card,.medico-card,.report-card,.stats-card,.top-services-card{box-shadow:none !important;border:1px solid #d9dee5 !important;background:#fff !important;}
-  .report-grid{display:grid !important;grid-template-columns:repeat(2, minmax(0,1fr)) !important;gap:12px !important;}
-  .fatture-grid{display:grid !important;grid-template-columns:1fr !important;gap:12px !important;}
-  .pie-layout{display:block !important;}
-  .pie-svg{display:block;margin:0 auto 16px !important;max-width:280px !important;height:auto !important;}
-  .pie-legend{display:block !important;}
-  .legend-row{border-bottom:1px solid #eef2f6;padding:6px 0;}
-  .report-card-title,.fattura-name,.top-services-title,.page-subtitle{color:#445266 !important;}
-  .report-card-value,.fattura-amount,strong,h2{color:#111827 !important;}
-}
-
-.giorni button{aspect-ratio:1/1;border-radius:50%;display:grid;place-items:center;background:#e6edf3;color:#52606d;font-weight:900;user-select:none;cursor:pointer;border:none;position:relative;transition:transform .12s ease, box-shadow .12s ease, background .18s ease;}
-.giorni button.active{color:#fff;background:linear-gradient(135deg,var(--green),var(--blue));box-shadow:0 10px 20px rgba(45,140,255,.18);}
-.giorni button.active::after{content:"";position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#fff;}
-
-
-/* final repair patches */
-.header{padding-inline:16px;}
-.brand-logo-full{width:148px !important;height:148px !important;border-radius:36px !important;padding:0 !important;background:transparent !important;box-shadow:none !important;object-fit:contain !important;}
-.period-tabs .tab.active{background:linear-gradient(135deg,var(--green),var(--blue)) !important;color:#fff !important;box-shadow:0 12px 24px rgba(45,140,255,.16);}
-#spesePage .toolbar{display:block;}
-#spesePage .toolbar .period-tabs{margin-bottom:12px;}
-#spesePage .filter-box{margin-bottom:12px;}
-.popup,.popup-box,.popup-body{overflow-x:hidden !important;}
-.popup-box{touch-action:pan-y !important;}
-body.modal-open{overflow:hidden;}
-.giorni button{pointer-events:auto;z-index:1;}
-@media print{
-  .menu,.page-head .small-action-btn,.back-btn,.detail-tools .small-action-btn,.toolbar .calendar-open-btn,.backup-tools,.popup,.pin-overlay{display:none !important;}
-  .header{padding:0 0 14px !important;}
-  .brand-logo-full{width:82px !important;height:82px !important;margin:0 auto 10px !important;}
-  .brand-title{font-size:34px !important;}
-  .brand-subtitle{font-size:14px !important;letter-spacing:4px !important;}
-  .main-content{padding:0 !important;}
-  .page{padding:0 !important;}
-  .report-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important;}
-  .card,.report-card,.fattura-card,.medico-card,.top-services-card,.stats-card,.pie-card,.simple-medico-row,.prestazione-row,.category-row{border:1px solid #d8dee7 !important;box-shadow:none !important;border-radius:14px !important;}
+  .page.active{display:block !important;}
+  .card,.medico-card,.fattura-card,.pie-card{break-inside:avoid; page-break-inside:avoid; box-shadow:none !important; border:1px solid #dde4ec;}
+  .report-grid,.fatture-grid,.cards-list{display:block !important;}
+  .header{padding:12px 0 18px;}
+  .brand-logo{width:70px;height:70px;box-shadow:none;border:1px solid #ddd;}
+  .brand-title{font-size:2.2rem;}
+  .brand-subtitle{font-size:1rem;}
+  .save-status{color:#7b8794 !important;}
 }

@@ -1,17 +1,17 @@
 const STORAGE_KEYS = {
-  doctors: "anvamed_doctors_v6",
-  entries: "anvamed_entries_v6",
-  invoiceStates: "anvamed_invoice_states_v6",
-  spese: "anvamed_spese_v6",
+  doctors: "anvamed_doctors_v5",
+  entries: "anvamed_entries_v5",
+  invoiceStates: "anvamed_invoice_states_v5",
+  spese: "anvamed_spese_v1",
   uiState: "anvamed_ui_state_v6"
 };
 
 const LEGACY_STORAGE_KEYS = {
-  doctors: "anvamed_doctors_v5",
-  entries: "anvamed_entries_v5",
-  invoiceStates: "anvamed_invoice_states_v5",
-  spese: "anvamed_spese_v5",
-  uiState: "anvamed_ui_state_v5"
+  doctors: "anvamed_doctors_v4",
+  entries: "anvamed_entries_v4",
+  invoiceStates: "anvamed_invoice_states_v4",
+  spese: "anvamed_spese_v1",
+  uiState: "anvamed_ui_state_v4"
 };
 
 const PIE_COLORS = ["#2d8cff", "#59cf82", "#9a62d8", "#eead42", "#dd5a52", "#39b86b", "#6e7b88"];
@@ -25,6 +25,11 @@ let doctors = [];
 let entries = [];
 let invoiceStates = {};
 let spese = [];
+let editingExpenseId = null;
+let editingPrestazioneDoctorId = null;
+let editingPrestazioneName = "";
+let speseFilterType = "giorno";
+let speseFilterValue = "";
 
 let currentDoctorId = null;
 let editingEntryId = null;
@@ -33,12 +38,6 @@ let homeFilterValue = "";
 let reportFilterType = "giorno";
 let reportFilterValue = "";
 let currentPage = "homePage";
-let editingPrestazioneDoctorId = null;
-let editingPrestazioneName = null;
-let editingSpesaId = null;
-let selectedSpesaCategory = "varie";
-let speseFilterType = "mese";
-let speseFilterValue = "";
 let isUnlocked = false;
 let lastHiddenAt = 0;
 const ACCESS_PIN = "1003";
@@ -87,12 +86,11 @@ function upsertDoctorPrestazione(doctorId, name, percMedico, prezzo = 0) {
   const doctor = getDoctorById(doctorId); if (!doctor) return false;
   const cleanName = String(name || "").trim();
   const safePerc = Math.max(0, Math.min(100, Number(percMedico)));
-  const safePrezzo = Number.isFinite(Number(prezzo)) && Number(prezzo) >= 0 ? Number(Number(prezzo).toFixed(2)) : 0;
   if (!cleanName || !Number.isFinite(safePerc)) return false;
   doctor.prestazioni = Array.isArray(doctor.prestazioni) ? doctor.prestazioni : [];
   const existing = doctor.prestazioni.find((item) => item.name.toLowerCase() === cleanName.toLowerCase());
-  if (existing) { existing.name = cleanName; existing.percMedico = Number(safePerc.toFixed(2)); existing.prezzo = safePrezzo; }
-  else doctor.prestazioni.push({ id: createId(), name: cleanName, percMedico: Number(safePerc.toFixed(2)), prezzo: safePrezzo });
+  if (existing) { existing.name = cleanName; existing.percMedico = Number(safePerc.toFixed(2)); existing.prezzo = Number(Math.max(0, Number(prezzo) || 0).toFixed(2)); }
+  else doctor.prestazioni.push({ id: createId(), name: cleanName, percMedico: Number(safePerc.toFixed(2)), prezzo: Number(Math.max(0, Number(prezzo) || 0).toFixed(2)) });
   doctor.prestazioni.sort((a,b)=>a.name.localeCompare(b.name, "it"));
   return true;
 }
@@ -139,10 +137,8 @@ function sanitizePrestazioneConfig(raw) {
   const name = String(raw?.name || raw?.prestazione || "").trim();
   if (!name) return null;
   const percMedico = Number(raw?.percMedico);
-  const prezzo = Number(raw?.prezzo ?? raw?.importoAuto ?? raw?.price ?? 0);
   const safePerc = Number.isFinite(percMedico) ? Math.max(0, Math.min(100, percMedico)) : 60;
-  const safePrezzo = Number.isFinite(prezzo) && prezzo >= 0 ? Number(prezzo.toFixed(2)) : 0;
-  return { id: Number(raw?.id) || createId(), name, percMedico: Number(safePerc.toFixed(2)), prezzo: safePrezzo };
+  return { id: Number(raw?.id) || createId(), name, percMedico: Number(safePerc.toFixed(2)), prezzo: Number(Math.max(0, Number(raw?.prezzo || 0) || 0).toFixed(2)) };
 }
 
 function sanitizeDoctor(raw) {
@@ -183,18 +179,7 @@ function sanitizeSpesa(raw) {
   const data = normalizeDateISO(raw?.data, todayISO());
   const note = String(raw?.note || "").trim();
   if (!nome || !Number.isFinite(importo) || importo <= 0) return null;
-  return { id: Number(raw?.id) || createId(), nome, categoria: categoria || "varie", importo: Number(importo.toFixed(2)), data, note };
-}
-
-function categoryLabel(value) {
-  const map = { utenze:"Utenze", affitto:"Affitto", fornitori:"Fornitori", medici:"Compensi medici", materiale:"Materiale sanitario", farmaci:"Farmaci", pulizie:"Pulizie", varie:"Varie" };
-  return map[value] || "Varie";
-}
-
-function trendBars(items) {
-  if (!items.length) return `<div class="medico-card">Nessun dato disponibile.</div>`;
-  const max = Math.max(...items.map((item) => item.value), 1);
-  return `<div class="trend-card"><div class="trend-title">Andamento uscite</div><div class="trend-list">${items.map((item) => `<div class="trend-row"><span>${escapeHtml(item.label)}</span><div class="trend-bar"><span style="width:${Math.max(8, (item.value / max) * 100)}%"></span></div><strong>${currency(item.value)}</strong></div>`).join("")}</div></div>`;
+  return { id: Number(raw?.id) || createId(), nome, categoria, importo: Number(importo.toFixed(2)), data, note };
 }
 
 function normalizeInvoiceStates(raw) {
@@ -216,19 +201,20 @@ function loadData() {
   const validDoctorIds = new Set(doctors.map((doctor) => doctor.id));
   entries = Array.isArray(storedEntries) ? storedEntries.map(sanitizeEntry).filter((entry) => entry && validDoctorIds.has(entry.doctorId)).sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id) : [];
   invoiceStates = normalizeInvoiceStates(storedInvoiceStates);
-  spese = Array.isArray(storedSpese) ? storedSpese.map(sanitizeSpesa).filter(Boolean).sort((a,b) => b.data.localeCompare(a.data) || b.id - a.id) : [];
+  spese = Array.isArray(storedSpese) ? storedSpese.map(sanitizeSpesa).filter(Boolean).sort((a,b)=> b.data.localeCompare(a.data) || b.id - a.id) : [];
 }
 
 function saveUiState() {
   const state = {
-    currentPage, currentDoctorId, homeFilterType, homeFilterValue, reportFilterType, reportFilterValue, speseFilterType, speseFilterValue,
+    currentPage, currentDoctorId, homeFilterType, homeFilterValue, reportFilterType, reportFilterValue,
     doctorDetailMonth: document.getElementById("doctorDetailMonth")?.value || currentMonthISO(),
     fattureDateFrom: document.getElementById("fattureDateFrom")?.value || monthStartISO(currentMonthISO()),
     fattureDateTo: document.getElementById("fattureDateTo")?.value || todayISO(),
     fattureStatusFilter: document.getElementById("fattureStatusFilter")?.value || "tutti",
     fattureTypeFilter: document.getElementById("fattureTypeFilter")?.value || "tutti",
     calendarMonth: document.getElementById("calendarMonth")?.value || currentMonthISO(),
-    speseCategoriaFiltro: document.getElementById("speseCategoriaFiltro")?.value || "tutte"
+    speseFilterType,
+    speseFilterValue
   };
   localStorage.setItem(STORAGE_KEYS.uiState, JSON.stringify(state));
 }
@@ -241,7 +227,7 @@ function loadUiState() {
   reportFilterValue = reportFilterType === "giorno" ? normalizeDateISO(state.reportFilterValue, todayISO()) : reportFilterType === "mese" ? normalizeMonthISO(state.reportFilterValue, currentMonthISO()) : normalizeYearISO(state.reportFilterValue, currentYearISO());
   currentDoctorId = doctors.some((doctor) => doctor.id === state.currentDoctorId) ? state.currentDoctorId : null;
   currentPage = typeof state.currentPage === "string" ? state.currentPage : "homePage";
-  speseFilterType = ["giorno","mese","anno"].includes(state.speseFilterType) ? state.speseFilterType : "mese";
+  speseFilterType = ["giorno","mese","anno"].includes(state.speseFilterType) ? state.speseFilterType : "giorno";
   speseFilterValue = speseFilterType === "giorno" ? normalizeDateISO(state.speseFilterValue, todayISO()) : speseFilterType === "mese" ? normalizeMonthISO(state.speseFilterValue, currentMonthISO()) : normalizeYearISO(state.speseFilterValue, currentYearISO());
   document.getElementById("doctorDetailMonth").value = normalizeMonthISO(state.doctorDetailMonth, currentMonthISO());
   document.getElementById("fattureDateFrom").value = normalizeDateISO(state.fattureDateFrom, monthStartISO(currentMonthISO()));
@@ -249,11 +235,6 @@ function loadUiState() {
   document.getElementById("fattureStatusFilter").value = ["tutti", "da_fatturare", "fatturato", "pagato"].includes(state.fattureStatusFilter) ? state.fattureStatusFilter : "tutti";
   document.getElementById("fattureTypeFilter").value = ["tutti", "standard", "riservata"].includes(state.fattureTypeFilter) ? state.fattureTypeFilter : "tutti";
   document.getElementById("calendarMonth").value = normalizeMonthISO(state.calendarMonth, currentMonthISO());
-  if (document.getElementById("spesePeriodoInput")) {
-    document.getElementById("spesePeriodoInput").type = speseFilterType === "giorno" ? "date" : speseFilterType === "mese" ? "month" : "number";
-    document.getElementById("spesePeriodoInput").value = speseFilterValue;
-  }
-  if (document.getElementById("speseCategoriaFiltro")) document.getElementById("speseCategoriaFiltro").value = state.speseCategoriaFiltro || "tutte";
 }
 
 function saveAll() {
@@ -285,8 +266,7 @@ function go(pageId, options = {}) {
 }
 
 function setActiveTab(section, type) {
-  const prefixMap = { home: "homeTab", report: "reportTab", spese: "speseTab" };
-  const prefix = prefixMap[section] || "homeTab";
+  const prefix = section === "home" ? "homeTab" : section === "report" ? "reportTab" : "speseTab";
   ["Giorno", "Mese", "Anno"].forEach((label) => document.getElementById(prefix + label)?.classList.remove("active"));
   const map = { giorno: "Giorno", mese: "Mese", anno: "Anno" };
   document.getElementById(prefix + map[type])?.classList.add("active");
@@ -349,7 +329,6 @@ function renderPrestazioneChips() {
 }
 
 function openEntryPopup(entryId = null, forcedDoctorId = null, forcedDate = null) {
-  document.body.classList.add("modal-open");
   if (!doctors.length) return alert("Inserisci prima almeno un medico");
   editingEntryId = entryId;
   document.getElementById("popup").classList.remove("hidden");
@@ -382,7 +361,8 @@ function openEntryPopup(entryId = null, forcedDoctorId = null, forcedDate = null
   applyRegisteredPercentForPopup();
   updatePopupPreview(); renderPrestazioneChips(); document.getElementById("popupPrestazioneSearch").focus();
 }
-function closeEntryPopup() { document.getElementById("popup").classList.add("hidden"); document.body.classList.remove("modal-open"); editingEntryId = null; }
+function closeEntryPopup() { document.getElementById("popup").classList.add("hidden"); editingEntryId = null; }
+
 function updatePopupPreview() {
   const amount = parseFloat(document.getElementById("popupImporto").value) || 0;
   const percMedico = Math.max(0, Math.min(100, parseFloat(document.getElementById("popupPercMedico").value) || 0));
@@ -494,8 +474,8 @@ function renderDoctorsPage() {
 function openDoctorDetail(doctorId) {
   const doctor = getDoctorById(doctorId); if (!doctor) return;
   currentDoctorId = doctorId; document.getElementById("doctorDetailName").textContent = doctor.name;
-  document.getElementById("doctorAvailability").innerHTML = WEEK_DAYS.map((label, idx) => { const key = `${label}-${idx}`; const active = doctor.availability.includes(key); return `<button type="button" class="${active ? "active" : ""}" aria-pressed="${active ? "true" : "false"}" data-availability-key="${key}" title="${label}">${label[0]}</button>`; }).join("");
-  document.querySelectorAll("#doctorAvailability [data-availability-key]").forEach((el) => el.addEventListener("click", () => toggleDoctorAvailability(el.dataset.availabilityKey)));
+  document.getElementById("doctorAvailability").innerHTML = WEEK_DAYS.map((label, idx) => { const key = `${label}-${idx}`; return `<span class="${doctor.availability.includes(key) ? "active" : ""}" data-availability-key="${key}">${label[0]}</span>`; }).join("");
+  document.querySelectorAll("[data-availability-key]").forEach((el) => el.addEventListener("click", () => toggleDoctorAvailability(el.dataset.availabilityKey)));
   if (!document.getElementById("doctorDetailMonth").value) document.getElementById("doctorDetailMonth").value = currentMonthISO();
   go("doctorDetailPage");
 }
@@ -505,9 +485,9 @@ function buildTopServices(list) { const map = {}; list.forEach((entry) => { cons
 function renderDoctorDetail() {
   const month = normalizeMonthISO(document.getElementById("doctorDetailMonth").value || currentMonthISO(), currentMonthISO()); document.getElementById("doctorDetailMonth").value = month;
   const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
-  document.getElementById("doctorDetailName").textContent = doctor.name; document.getElementById("doctorMonthLabel").textContent = `Prestazioni di ${monthLabel(month)}`;
-  document.getElementById("doctorAvailability").innerHTML = WEEK_DAYS.map((label, idx) => { const key = `${label}-${idx}`; const active = doctor.availability.includes(key); return `<button type="button" class="${active ? "active" : ""}" aria-pressed="${active ? "true" : "false"}" data-availability-key="${key}" title="${label}">${label[0]}</button>`; }).join("");
-  document.querySelectorAll("#doctorAvailability [data-availability-key]").forEach((el) => el.addEventListener("click", () => toggleDoctorAvailability(el.dataset.availabilityKey)));
+  document.getElementById("doctorDetailName").textContent = doctor.name; document.getElementById("doctorAvailability").innerHTML = WEEK_DAYS.map((label, idx) => { const key = `${label}-${idx}`; return `<span class="${doctor.availability.includes(key) ? "active" : ""}" data-availability-key="${key}">${label[0]}</span>`; }).join("");
+  document.querySelectorAll("[data-availability-key]").forEach((el) => el.addEventListener("click", () => toggleDoctorAvailability(el.dataset.availabilityKey)));
+  document.getElementById("doctorMonthLabel").textContent = `Prestazioni di ${monthLabel(month)}`;
   const list = entries.filter((entry) => entry.doctorId === currentDoctorId && entry.data.startsWith(month)).sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
   document.getElementById("doctorTotMedico").textContent = currency(list.reduce((s, e) => s + e.quotaMedico, 0));
   document.getElementById("doctorTotStruttura").textContent = currency(list.reduce((s, e) => s + e.quotaStruttura, 0));
@@ -539,7 +519,7 @@ function renderPrestazioniPage() {
       <div class="prestazione-row-top">
         <div>
           <div class="prestazione-row-name">${escapeHtml(item.name)}</div>
-          <div class="prestazione-row-sub"><span>% medico automatica: ${item.percMedico}%</span><span>Importo automatico: ${item.prezzo ? currency(item.prezzo) : "—"}</span></div>
+          <div class="prestazione-row-sub">% medico automatica: ${item.percMedico}% · Importo: ${item.prezzo ? currency(item.prezzo) : "—"}</div>
         </div>
         <div class="simple-medico-actions">
           <button class="icon-btn" type="button" data-edit-prestazione="${escapeHtml(item.name)}">✏️</button>
@@ -552,19 +532,47 @@ function renderPrestazioniPage() {
 }
 
 function addPrestazioneConfig() {
-  if (!doctors.length) return alert("Inserisci prima almeno un medico");
-  const doctorId = Number(document.getElementById("prestazioniDoctorFilter")?.value || currentDoctorId || doctors[0].id);
-  const name = prompt("Nome prestazione");
-  if (!name) return;
-  const cleanName = name.trim();
-  if (!cleanName) return;
-  const suggested = findDoctorPrestazione(doctorId, cleanName)?.percMedico ?? 60;
-  const perc = prompt(`Percentuale medico per "${cleanName}"`, String(suggested));
-  if (perc === null) return;
-  const safePerc = Number(perc);
-  if (!Number.isFinite(safePerc) || safePerc < 0 || safePerc > 100) return alert("Inserisci una percentuale valida tra 0 e 100");
-  upsertDoctorPrestazione(doctorId, cleanName, safePerc);
+  openPrestazionePopup(Number(document.getElementById("prestazioniDoctorFilter")?.value || currentDoctorId || doctors[0]?.id || 0));
+}
+
+function openPrestazionePopup(doctorId, currentName = "") {
+  if (!doctorId) return;
+  const doctorSelect = document.getElementById("prestPopupDoctor");
+  doctorSelect.innerHTML = doctors.map((doctor) => `<option value="${doctor.id}">${escapeHtml(doctor.name)}</option>`).join("");
+  doctorSelect.value = String(doctorId);
+  editingPrestazioneDoctorId = null; editingPrestazioneName = "";
+  document.getElementById("prestazionePopupTitle").textContent = currentName ? "Modifica prestazione" : "Nuova prestazione";
+  document.getElementById("prestPopupName").value = "";
+  document.getElementById("prestPopupPerc").value = "60";
+  document.getElementById("prestPopupPrezzo").value = "";
+  if (currentName) {
+    const current = findDoctorPrestazione(doctorId, currentName);
+    if (current) {
+      editingPrestazioneDoctorId = doctorId; editingPrestazioneName = current.name;
+      document.getElementById("prestPopupName").value = current.name;
+      document.getElementById("prestPopupPerc").value = current.percMedico;
+      document.getElementById("prestPopupPrezzo").value = current.prezzo || "";
+    }
+  }
+  document.getElementById("prestazionePopup").classList.remove("hidden");
+}
+
+function closePrestazionePopup() {
+  document.getElementById("prestazionePopup").classList.add("hidden");
+  editingPrestazioneDoctorId = null; editingPrestazioneName = "";
+}
+
+function savePrestazionePopup() {
+  const doctorId = Number(document.getElementById("prestPopupDoctor").value || 0);
+  const name = document.getElementById("prestPopupName").value.trim();
+  const perc = Number(document.getElementById("prestPopupPerc").value);
+  const prezzo = Number(document.getElementById("prestPopupPrezzo").value || 0);
+  if (!doctorId || !name) return alert("Inserisci medico e nome prestazione");
+  if (!Number.isFinite(perc)) return alert("Percentuale non valida");
+  if (editingPrestazioneDoctorId && editingPrestazioneName) deleteDoctorPrestazione(editingPrestazioneDoctorId, editingPrestazioneName);
+  upsertDoctorPrestazione(doctorId, name, perc, prezzo);
   saveAll();
+  closePrestazionePopup();
   renderPrestazioniPage();
 }
 
@@ -592,22 +600,93 @@ function removePrestazioneConfig(doctorId, name) {
   renderPrestazioniPage();
 }
 
-function openPrintWindow(title, bodyHtml) {
-  const win = window.open("", "_blank", "width=960,height=1200");
-  if (!win) { window.print(); return; }
-  win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial,sans-serif;color:#17212b;padding:24px} .head{text-align:center;margin-bottom:24px} .head img{width:86px;height:86px;object-fit:contain;display:block;margin:0 auto 10px} .head h1{margin:0;font-size:34px} .head h2{margin:4px 0 0;font-size:14px;letter-spacing:4px;color:#6b7684} .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px} .card{border:1px solid #d9dee5;border-radius:14px;padding:14px;margin:0 0 12px;break-inside:avoid;page-break-inside:avoid} .list-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #edf1f5} .muted{color:#687789} .title{font-size:28px;font-weight:800;margin:0 0 14px} .subtitle{font-size:18px;font-weight:700;margin:18px 0 10px} .days{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px} .day{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e6edf3;color:#52606d;font-weight:900} .day.active{background:linear-gradient(135deg,#56d39b,#3182f6);color:#fff} .small{font-size:12px}.right{text-align:right}</style></head><body><div class="head"><img src="anvamed.jpg" alt="ANVAMED"><h1>ANVAMED</h1><h2>MANAGER</h2></div>${bodyHtml}</body></html>`);
-  win.document.close();
-  setTimeout(() => { win.focus(); win.print(); }, 250);
+function printDoctorDetail() { window.print(); }
+
+
+function getSpeseByFilter(type, value) {
+  return spese.filter((item) => type === "giorno" ? item.data === value : type === "mese" ? item.data.startsWith(value) : item.data.startsWith(String(value)));
 }
 
-function printDoctorDetail() {
-  const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
-  const month = document.getElementById("doctorDetailMonth").value || currentMonthISO();
-  const list = entries.filter((entry) => entry.doctorId === currentDoctorId && entry.data.startsWith(month)).sort((a,b)=>b.data.localeCompare(a.data)||b.id-a.id);
-  const availability = WEEK_DAYS.map((label, idx) => `<span class="day ${doctor.availability.includes(`${label}-${idx}`) ? "active" : ""}">${label[0]}</span>`).join("");
-  const rows = list.map((entry) => `<div class="list-row"><div><strong>${escapeHtml(entry.prestazione)}</strong><div class="muted small">${formatDateLabel(entry.data)} · ${entry.tipoVoce} · ${entry.pagamento}</div></div><div class="right"><strong>${currency(entry.importo)}</strong><div class="muted small">Medico ${currency(entry.quotaMedico)} · Struttura ${currency(entry.quotaStruttura)}</div></div></div>`).join("") || `<div class="card">Nessuna prestazione nel periodo selezionato.</div>`;
-  const html = `<div class="title">${escapeHtml(doctor.name)}</div><div class="subtitle">Disponibilità settimanale</div><div class="days">${availability}</div><div class="subtitle">Mese selezionato: ${monthLabel(month)}</div><div class="grid"><div class="card"><div class="muted">Guadagno medico</div><strong>${document.getElementById("doctorTotMedico").textContent}</strong></div><div class="card"><div class="muted">Guadagno struttura</div><strong>${document.getElementById("doctorTotStruttura").textContent}</strong></div><div class="card"><div class="muted">Prestazioni</div><strong>${document.getElementById("doctorTotPrestazioni").textContent}</strong></div></div><div class="subtitle">Prestazioni del mese</div><div class="card">${rows}</div>`;
-  openPrintWindow("Stampa medico", html);
+function renderSpeseFilterControl() {
+  const wrap = document.getElementById("speseFilterControlWrap");
+  if (!wrap) return;
+  if (!speseFilterValue) speseFilterValue = speseFilterType === "giorno" ? todayISO() : speseFilterType === "mese" ? currentMonthISO() : currentYearISO();
+  if (speseFilterType === "giorno") wrap.innerHTML = `<label>Giorno selezionato<input id="speseDateInput" type="date" value="${speseFilterValue}" max="${todayISO()}" /></label>`;
+  else if (speseFilterType === "mese") wrap.innerHTML = `<label>Mese selezionato<input id="speseMonthInput" type="month" value="${speseFilterValue}" max="${currentMonthISO()}" /></label>`;
+  else wrap.innerHTML = `<label>Anno selezionato<select id="speseYearInput">${Array.from({length:5},(_,i)=>{ const y=String(Number(currentYearISO())-i); return `<option value="${y}" ${y===speseFilterValue?"selected":""}>${y}</option>`; }).join("")}</select></label>`;
+  document.getElementById("speseDateInput")?.addEventListener("change", (e)=>{ speseFilterValue = normalizeDateISO(e.target.value, todayISO()); renderSpesePage(); });
+  document.getElementById("speseMonthInput")?.addEventListener("change", (e)=>{ speseFilterValue = normalizeMonthISO(e.target.value, currentMonthISO()); renderSpesePage(); });
+  document.getElementById("speseYearInput")?.addEventListener("change", (e)=>{ speseFilterValue = normalizeYearISO(e.target.value, currentYearISO()); renderSpesePage(); });
+}
+
+function openExpensePopup(id = null) {
+  editingExpenseId = id;
+  document.getElementById("expensePopupTitle").textContent = id ? "Modifica uscita" : "Nuova uscita";
+  const item = id ? spese.find((s) => s.id === id) : null;
+  document.getElementById("expenseNome").value = item?.nome || "";
+  document.getElementById("expenseCategoria").value = item?.categoria || "fornitori";
+  document.getElementById("expenseImporto").value = item?.importo || "";
+  document.getElementById("expenseData").value = item?.data || todayISO();
+  document.getElementById("expenseNote").value = item?.note || "";
+  document.getElementById("expensePopup").classList.remove("hidden");
+}
+
+function closeExpensePopup() {
+  editingExpenseId = null;
+  document.getElementById("expensePopup").classList.add("hidden");
+}
+
+function saveExpense() {
+  const item = sanitizeSpesa({
+    id: editingExpenseId || undefined,
+    nome: document.getElementById("expenseNome").value,
+    categoria: document.getElementById("expenseCategoria").value,
+    importo: document.getElementById("expenseImporto").value,
+    data: document.getElementById("expenseData").value,
+    note: document.getElementById("expenseNote").value
+  });
+  if (!item) return alert("Compila almeno nome, importo e data validi");
+  if (editingExpenseId) spese = spese.map((s) => s.id === editingExpenseId ? item : s);
+  else spese.unshift(item);
+  spese.sort((a,b)=> b.data.localeCompare(a.data) || b.id - a.id);
+  saveAll();
+  closeExpensePopup();
+  renderSpesePage();
+}
+
+function deleteExpense(id) {
+  if (!confirm("Eliminare questa uscita?")) return;
+  spese = spese.filter((s) => s.id !== id);
+  saveAll();
+  renderSpesePage();
+}
+
+function renderSpesePage() {
+  renderSpeseFilterControl();
+  setActiveTab("spese", speseFilterType);
+  const list = getSpeseByFilter(speseFilterType, speseFilterValue);
+  document.getElementById("spesePeriodoLabel").textContent = `${speseFilterType[0].toUpperCase()+speseFilterType.slice(1)} selezionato: ${periodLabel(speseFilterType, speseFilterValue)}`;
+  const totalePeriodo = list.reduce((s, item) => s + item.importo, 0);
+  const totaleOggi = spese.filter((item)=> item.data === todayISO()).reduce((s,item)=> s+item.importo,0);
+  const filtroMese = speseFilterType === "mese" ? speseFilterValue : currentMonthISO();
+  const totaleMese = spese.filter((item)=> item.data.startsWith(filtroMese)).reduce((s,item)=> s+item.importo,0);
+  const filtroAnno = speseFilterType === "anno" ? speseFilterValue : currentYearISO();
+  const totaleAnno = spese.filter((item)=> item.data.startsWith(filtroAnno)).reduce((s,item)=> s+item.importo,0);
+  document.getElementById("speseCards").innerHTML = `
+    <div class="card report-card"><div class="report-card-title">Uscite periodo</div><div class="report-card-value">${currency(totalePeriodo)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Oggi</div><div class="report-card-value">${currency(totaleOggi)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Mese</div><div class="report-card-value">${currency(totaleMese)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Anno</div><div class="report-card-value">${currency(totaleAnno)}</div></div>
+  `;
+  const map = {}; list.forEach((item)=>{ map[item.categoria] = (map[item.categoria] || 0) + item.importo; });
+  const pieItems = Object.entries(map).map(([name, value], idx)=>({name, value, color: PIE_COLORS[idx % PIE_COLORS.length]}));
+  const legend = pieItems.map((item)=> `<div class="legend-row"><div class="legend-left"><span class="legend-dot" style="background:${item.color}"></span><span class="legend-name">${escapeHtml(item.name)}</span></div><span class="legend-val">${currency(item.value)}</span></div>`).join("");
+  document.getElementById("spesePieWrap").innerHTML = pieItems.length ? `<div class="pie-card"><div class="pie-layout">${buildPieSVG(pieItems)}<div class="pie-legend">${legend}</div></div></div>` : `<div class="medico-card">Nessuna uscita nel periodo selezionato.</div>`;
+  const wrap = document.getElementById("speseList");
+  wrap.innerHTML = list.map((item)=> `<div class="medico-card expense-card"><div class="prestazione-top"><div><div class="prestazione-title">${escapeHtml(item.nome)}</div><div class="prestazione-date">${formatDateLabel(item.data)} · ${escapeHtml(item.categoria)}</div>${item.note ? `<div class="page-subtitle">${escapeHtml(item.note)}</div>` : ``}</div><div class="prestazione-amount">${currency(item.importo)}</div></div><div class="card-actions" style="margin-top:12px;"><button class="icon-btn" type="button" data-edit-expense="${item.id}">✏️</button><button class="icon-btn" type="button" data-delete-expense="${item.id}">🗑️</button></div></div>`).join("") || `<div class="medico-card">Nessuna uscita nel periodo selezionato.</div>`;
+  wrap.querySelectorAll("[data-edit-expense]").forEach((btn)=>btn.addEventListener("click", ()=> openExpensePopup(Number(btn.dataset.editExpense))));
+  wrap.querySelectorAll("[data-delete-expense]").forEach((btn)=>btn.addEventListener("click", ()=> deleteExpense(Number(btn.dataset.deleteExpense))));
+  saveUiState();
 }
 
 function buildPieSVG(items) {
@@ -619,15 +698,14 @@ function buildPieSVG(items) {
 
 function renderReport() {
   const list = getEntriesByFilter(reportFilterType, reportFilterValue);
-  const reportSpese = getSpeseByFilter(reportFilterType, reportFilterValue);
   const stats = buildStatsMap(list); const workedDoctors = doctors.filter((doctor) => stats[doctor.id]);
   const total = list.reduce((s, e) => s + e.importo, 0), structure = list.reduce((s, e) => s + e.quotaStruttura, 0), doctor = list.reduce((s, e) => s + e.quotaMedico, 0);
+  const expenseTotal = getSpeseByFilter(reportFilterType, reportFilterValue).reduce((s, item) => s + item.importo, 0);
+  const utileNetto = structure - expenseTotal;
   const totalPOS = list.filter((e) => e.pagamento === "pos").reduce((s, e) => s + e.importo, 0);
   const totalContanti = list.filter((e) => e.pagamento === "contanti").reduce((s, e) => s + e.importo, 0);
   const totalStandard = list.filter((e) => e.tipoVoce === "standard").reduce((s, e) => s + e.importo, 0);
   const totalRiservata = list.filter((e) => e.tipoVoce === "riservata").reduce((s, e) => s + e.importo, 0);
-  const totalSpese = reportSpese.reduce((s, e) => s + e.importo, 0);
-  const utileNetto = structure - totalSpese;
   document.getElementById("reportPeriodoLabel").textContent = `${reportFilterType[0].toUpperCase() + reportFilterType.slice(1)} selezionato: ${periodLabel(reportFilterType, reportFilterValue)}`;
   const pieItems = workedDoctors.map((doctorItem, idx) => ({ name: doctorItem.name, value: stats[doctorItem.id].total, color: PIE_COLORS[idx % PIE_COLORS.length] }));
   const legend = pieItems.map((item) => `<div class="legend-row"><div class="legend-left"><span class="legend-dot" style="background:${item.color}"></span><span class="legend-name">${escapeHtml(item.name)}</span></div><span class="legend-val">${currency(item.value)}</span></div>`).join("");
@@ -636,6 +714,8 @@ function renderReport() {
     <div class="card report-card"><div class="report-card-title">Guadagno totale</div><div class="report-card-value">${currency(total)}</div></div>
     <div class="card report-card"><div class="report-card-title">Totale struttura</div><div class="report-card-value">${currency(structure)}</div></div>
     <div class="card report-card"><div class="report-card-title">Totale medici</div><div class="report-card-value">${currency(doctor)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Spese periodo</div><div class="report-card-value">${currency(expenseTotal)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Utile netto</div><div class="report-card-value">${currency(utileNetto)}</div></div>
     <div class="card report-card"><div class="report-card-title">Prestazioni totali</div><div class="report-card-value">${list.length}</div></div>
     <div class="card report-card"><div class="report-card-title">POS</div><div class="report-card-value">${currency(totalPOS)}</div></div>
     <div class="card report-card"><div class="report-card-title">Contanti</div><div class="report-card-value">${currency(totalContanti)}</div></div>
@@ -645,13 +725,7 @@ function renderReport() {
   `;
 }
 
-function printReport() {
-  const title = document.getElementById("reportPeriodoLabel").textContent || "Report";
-  const pie = document.getElementById("reportPieWrap").innerHTML;
-  const cards = document.getElementById("reportCards").innerHTML;
-  const html = `<div class="title">Report</div><div class="subtitle">${escapeHtml(title)}</div>${pie}<div class="grid">${cards}</div>`;
-  openPrintWindow("Report", html);
-}
+function printReport() { window.print(); }
 function invoiceKey(doctorId, fromDate, toDate, type) { return `${doctorId}__${fromDate}__${toDate}__${type}`; }
 function getInvoiceFilters() {
   const fromDate = normalizeDateISO(document.getElementById("fattureDateFrom").value, monthStartISO(currentMonthISO()));
@@ -684,14 +758,7 @@ function renderInvoices() {
   wrap.querySelectorAll("[data-invoice-doctor]").forEach((btn) => btn.addEventListener("click", () => cycleInvoiceStatus(Number(btn.dataset.invoiceDoctor), fromDate, toDate, type)));
   saveUiState();
 }
-function printInvoices() {
-  const from = document.getElementById("fattureDateFrom").value;
-  const to = document.getElementById("fattureDateTo").value;
-  const summary = document.getElementById("fattureSummary").innerHTML;
-  const grid = document.getElementById("fattureGrid").innerHTML;
-  const html = `<div class="title">Fatture</div><div class="subtitle">Periodo: ${formatDateLabel(from)} → ${formatDateLabel(to)}</div><div class="grid">${summary}</div><div class="subtitle">Medici nel periodo</div>${grid}`;
-  openPrintWindow("Fatture", html);
-}
+function printInvoices() { window.print(); }
 
 function daysInMonth(year, monthIndex) { return new Date(year, monthIndex + 1, 0).getDate(); }
 function renderCalendar() {
@@ -711,7 +778,7 @@ function renderCalendar() {
 function renderAll() { renderTopMonthlyCards(); renderHome(); renderDoctorsPage(); renderPrestazioniPage(); renderSpesePage(); renderReport(); renderInvoices(); if (currentDoctorId) renderDoctorDetail(); if (document.getElementById("calendarPage").classList.contains("active")) renderCalendar(); }
 
 function exportData() {
-  const data = { schemaVersion: 6, doctors, entries, spese, invoiceStates, exportedAt: new Date().toISOString() };
+  const data = { schemaVersion: 5, doctors, entries, invoiceStates, spese, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `backup-anvamed-${todayISO()}.json`; link.click(); URL.revokeObjectURL(link.href); setSaveStatus("Backup esportato");
 }
 function importDataFromFile(file) {
@@ -724,7 +791,7 @@ function importDataFromFile(file) {
       const doctorIds = new Set(importedDoctors.map((doctor) => doctor.id));
       const importedEntries = Array.isArray(data.entries) ? data.entries.map(sanitizeEntry).filter((entry) => entry && doctorIds.has(entry.doctorId)) : [];
       const importedSpese = Array.isArray(data.spese) ? data.spese.map(sanitizeSpesa).filter(Boolean) : [];
-      doctors = importedDoctors.sort((a, b) => a.name.localeCompare(b.name, "it")); entries = importedEntries.sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id); spese = importedSpese.sort((a,b)=>b.data.localeCompare(a.data) || b.id - a.id); invoiceStates = normalizeInvoiceStates(data.invoiceStates);
+      doctors = importedDoctors.sort((a, b) => a.name.localeCompare(b.name, "it")); entries = importedEntries.sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id); invoiceStates = normalizeInvoiceStates(data.invoiceStates); spese = importedSpese.sort((a,b)=> b.data.localeCompare(a.data) || b.id - a.id);
       if (currentDoctorId && !doctors.some((doctor) => doctor.id === currentDoctorId)) currentDoctorId = null;
       saveAll(); renderAll(); document.getElementById("importFile").value = ""; alert("Backup importato correttamente");
     } catch (error) { console.error(error); alert("Errore durante l'importazione del backup"); setSaveStatus("Errore di importazione", true); }
@@ -734,7 +801,7 @@ function importDataFromFile(file) {
 
 function setupEventListeners() {
   document.getElementById("newRegistrationBtn").addEventListener("click", () => openEntryPopup());
-  document.getElementById("newExpenseBtn").addEventListener("click", () => openSpesaPopup());
+  document.getElementById("newExpenseBtn").addEventListener("click", () => openExpensePopup());
   document.getElementById("openCalendarBtn").addEventListener("click", () => go("calendarPage"));
   document.getElementById("addDoctorBtn").addEventListener("click", addDoctor);
   document.getElementById("backToDoctorsBtn").addEventListener("click", () => go("mediciPage"));
@@ -742,16 +809,8 @@ function setupEventListeners() {
   document.getElementById("quickAddDoctorBtn").addEventListener("click", () => { if (!currentDoctorId) return; const month = document.getElementById("doctorDetailMonth").value || currentMonthISO(); openEntryPopup(null, currentDoctorId, month === currentMonthISO() ? todayISO() : `${month}-01`); });
   document.getElementById("printDoctorBtn").addEventListener("click", printDoctorDetail);
   document.getElementById("addPrestazioneBtn").addEventListener("click", addPrestazioneConfig);
-  document.getElementById("addSpesaBtn").addEventListener("click", () => openSpesaPopup());
+  document.getElementById("addExpenseBtnPage").addEventListener("click", () => openExpensePopup());
   document.getElementById("prestazioniDoctorFilter").addEventListener("change", (event) => { currentDoctorId = Number(event.target.value) || currentDoctorId; renderPrestazioniPage(); saveUiState(); });
-  document.getElementById("speseTabGiorno").addEventListener("click", () => setSpeseFiltroTipo("giorno"));
-  document.getElementById("speseTabMese").addEventListener("click", () => setSpeseFiltroTipo("mese"));
-  document.getElementById("speseTabAnno").addEventListener("click", () => setSpeseFiltroTipo("anno"));
-  document.getElementById("spesePeriodoInput").addEventListener("change", (event) => {
-    speseFilterValue = speseFilterType === "giorno" ? normalizeDateISO(event.target.value, todayISO()) : speseFilterType === "mese" ? normalizeMonthISO(event.target.value, currentMonthISO()) : normalizeYearISO(event.target.value, currentYearISO());
-    renderSpesePage();
-  });
-  document.getElementById("speseCategoriaFiltro").addEventListener("change", renderSpesePage);
   document.getElementById("printReportBtn").addEventListener("click", printReport);
   document.getElementById("printInvoicesBtn").addEventListener("click", printInvoices);
   document.getElementById("exportBackupBtn").addEventListener("click", exportData);
@@ -792,20 +851,7 @@ function setupEventListeners() {
   document.getElementById("pinUnlockBtn").addEventListener("click", unlockWithPin);
   document.getElementById("pinInput").addEventListener("keydown", (event) => { if (event.key === "Enter") unlockWithPin(); });
   document.getElementById("popup").addEventListener("click", (event) => { if (event.target.id === "popup") closeEntryPopup(); });
-  document.getElementById("prestazionePopup").addEventListener("click", (event) => { if (event.target.id === "prestazionePopup") closePrestazionePopup(); });
-  document.getElementById("spesaPopup").addEventListener("click", (event) => { if (event.target.id === "spesaPopup") closeSpesaPopup(); });
-  document.getElementById("closePrestazionePopupBtn").addEventListener("click", closePrestazionePopup);
-  document.getElementById("cancelPrestazionePopupBtn").addEventListener("click", closePrestazionePopup);
-  document.getElementById("savePrestazionePopupBtn").addEventListener("click", savePrestazionePopup);
-  document.getElementById("closeSpesaPopupBtn").addEventListener("click", closeSpesaPopup);
-  document.getElementById("cancelSpesaPopupBtn").addEventListener("click", closeSpesaPopup);
-  document.getElementById("saveSpesaPopupBtn").addEventListener("click", saveSpesaPopup);
-  document.addEventListener("keydown", (event) => {
-    if (event.key !== "Escape") return;
-    if (!document.getElementById("spesaPopup").classList.contains("hidden")) closeSpesaPopup();
-    else if (!document.getElementById("prestazionePopup").classList.contains("hidden")) closePrestazionePopup();
-    else if (!document.getElementById("popup").classList.contains("hidden")) closeEntryPopup();
-  });
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !document.getElementById("popup").classList.contains("hidden")) closeEntryPopup(); });
 }
 
 function lockApp() {
@@ -856,8 +902,7 @@ function boot() {
   document.getElementById("fattureDateFrom").max = todayISO();
   document.getElementById("fattureDateTo").max = todayISO();
   document.getElementById("calendarMonth").value = currentMonthISO();
-  speseFilterValue = currentMonthISO();
-  setupEventListeners(); loadUiState(); renderHomeFilterControl(); renderReportFilterControl(); renderSpeseFilterControl(); renderAll();
+  setupEventListeners(); loadUiState(); renderHomeFilterControl(); renderReportFilterControl(); renderAll();
   const allowedPages = ["homePage", "mediciPage", "doctorDetailPage", "prestazioniPage", "spesePage", "reportPage", "fatturePage", "calendarPage"]; if (!allowedPages.includes(currentPage)) currentPage = "homePage"; if (currentPage === "doctorDetailPage" && !currentDoctorId) currentPage = "mediciPage";
   setActiveTab("home", homeFilterType); setActiveTab("report", reportFilterType); setActiveTab("spese", speseFilterType); go(currentPage, { skipRender: false }); setSaveStatus("Archivio locale premium attivo");
   lockApp();
@@ -875,3 +920,7 @@ function boot() {
 }
 
 document.addEventListener("DOMContentLoaded", boot);
+
+
+document.getElementById("expensePopup").addEventListener("click", (e) => { if (e.target.id === "expensePopup") closeExpensePopup(); });
+document.getElementById("prestazionePopup").addEventListener("click", (e) => { if (e.target.id === "prestazionePopup") closePrestazionePopup(); });

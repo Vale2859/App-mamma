@@ -7,17 +7,15 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>ANVAMED Manager</title>
-  <meta name="apple-mobile-web-app-title" content="ANVAMED" />
-  <meta name="theme-color" content="#eef3f7" />
   <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="anvamed.jpg" />
   <link rel="icon" href="anvamed.jpg" />
+  <link rel="apple-touch-icon" href="anvamed.jpg" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app-shell">
     <header class="header">
-      <img src="anvamed.jpg" alt="ANVAMED" class="brand-logo-full" />
+      <img src="anvamed.jpg" alt="ANVAMED" class="brand-logo" />
       <div class="brand-title">ANVAMED</div>
       <div class="brand-subtitle">MANAGER</div>
       <div id="saveStatus" class="save-status">Archivio locale attivo</div>
@@ -48,7 +46,7 @@
           </span>
         </button>
 
-        <button class="main-btn main-btn-expense" type="button" id="newExpenseBtn">
+        <button class="secondary-main-btn" type="button" id="newExpenseBtn">
           <span class="btn-plus">－</span>
           <span class="btn-text-wrap">
             <span class="btn-title">NUOVA USCITA</span>
@@ -105,7 +103,7 @@
           <h2 id="doctorDetailName">Medico</h2>
         </div>
 
-        <div class="page-subtitle">Disponibilità settimanale · tocca i giorni in cui il medico viene</div>
+        <div class="page-subtitle">Disponibilità settimanale</div>
         <div id="doctorAvailability" class="giorni"></div>
 
         <div class="detail-tools">
@@ -155,48 +153,30 @@
           <select id="prestazioniDoctorFilter"></select>
         </div>
 
-        <div class="page-subtitle">Le prestazioni salvate qui compariranno come pillole nella nuova registrazione e imposteranno in automatico nome, % del medico e importo. Potrai comunque modificare tutto manualmente.</div>
+        <div class="page-subtitle">Le prestazioni salvate qui compariranno come pillole nella nuova registrazione e imposteranno in automatico la % del medico.</div>
         <div id="prestazioniList" class="simple-list"></div>
       </section>
+
 
       <section id="spesePage" class="page">
         <div class="page-head">
           <h2>Spese</h2>
-          <button class="small-action-btn" type="button" id="addSpesaBtn">+ Nuova</button>
+          <button class="small-action-btn" type="button" id="addExpenseBtnPage">+ Nuova uscita</button>
         </div>
 
-        <div class="toolbar">
-          <div class="period-tabs">
-            <button id="speseTabGiorno" class="tab active" type="button">Giorno</button>
-            <button id="speseTabMese" class="tab" type="button">Mese</button>
-            <button id="speseTabAnno" class="tab" type="button">Anno</button>
-          </div>
-          <div class="filter-box">
-            <div class="filter-control">
-              <label for="spesePeriodoInput">Periodo selezionato</label>
-              <input id="spesePeriodoInput" type="date" />
-            </div>
-          </div>
-          <div class="filter-control">
-            <label for="speseCategoriaFiltro">Categoria</label>
-            <select id="speseCategoriaFiltro">
-              <option value="tutte">Tutte</option>
-              <option value="utenze">Utenze</option>
-              <option value="affitto">Affitto</option>
-              <option value="fornitori">Fornitori</option>
-              <option value="medici">Compensi medici</option>
-              <option value="materiale">Materiale sanitario</option>
-              <option value="farmaci">Farmaci</option>
-              <option value="pulizie">Pulizie</option>
-              <option value="varie">Varie</option>
-            </select>
-          </div>
+        <div class="period-tabs">
+          <button id="speseTabGiorno" class="tab active" type="button">Giorno</button>
+          <button id="speseTabMese" class="tab" type="button">Mese</button>
+          <button id="speseTabAnno" class="tab" type="button">Anno</button>
         </div>
 
-        <div id="spesePeriodoLabel" class="page-subtitle"></div>
-        <div id="speseSummary" class="report-grid"></div>
-        <div class="pie-wrap"><div id="spesePieWrap"></div></div>
-        <div id="speseTrendWrap" class="pie-wrap"></div>
+        <div class="filter-box">
+          <div id="speseFilterControlWrap"></div>
+        </div>
+
+        <div class="page-subtitle" id="spesePeriodoLabel">Periodo selezionato</div>
+        <div id="spesePieWrap" class="pie-wrap"></div>
+        <div id="speseCards" class="report-grid"></div>
         <div id="speseList" class="cards-list"></div>
       </section>
 
@@ -370,50 +350,50 @@
   </div>
 
 
+  <div id="expensePopup" class="popup hidden">
+    <div class="popup-box popup-box-compact">
+      <div class="popup-head">
+        <h2 id="expensePopupTitle">Nuova uscita</h2>
+        <button class="close-btn" type="button" id="closeExpensePopupBtn">✕</button>
+      </div>
+      <input id="expenseNome" type="text" placeholder="Nome uscita" />
+      <select id="expenseCategoria">
+        <option value="fornitori">Fornitori</option>
+        <option value="medici">Compensi medici</option>
+        <option value="utenze">Utenze</option>
+        <option value="affitto">Affitto</option>
+        <option value="materiale">Materiale sanitario</option>
+        <option value="farmaci">Farmaci</option>
+        <option value="pulizie">Pulizie</option>
+        <option value="varie">Varie</option>
+      </select>
+      <input id="expenseImporto" type="number" inputmode="decimal" placeholder="Importo" />
+      <input id="expenseData" type="date" />
+      <input id="expenseNote" type="text" placeholder="Nota facoltativa" />
+      <div class="actions">
+        <button class="secondary-btn" type="button" id="cancelExpensePopupBtn">Annulla</button>
+        <button class="primary-btn" type="button" id="saveExpensePopupBtn">Salva</button>
+      </div>
+    </div>
+  </div>
+
   <div id="prestazionePopup" class="popup hidden">
     <div class="popup-box popup-box-compact">
       <div class="popup-head">
         <h2 id="prestazionePopupTitle">Nuova prestazione</h2>
         <button class="close-btn" type="button" id="closePrestazionePopupBtn">✕</button>
       </div>
-      <div class="popup-subtitle">Inserimento rapido in un unico popup</div>
-      <input id="prestazioneNomeInput" type="text" placeholder="Nome prestazione" maxlength="120" />
-      <div class="popup-extra-grid">
-        <div class="perc-group">
-          <label for="prestazionePercInput">% Medico</label>
-          <input id="prestazionePercInput" type="number" min="0" max="100" step="0.01" placeholder="60" />
-        </div>
-        <div class="perc-group">
-          <label for="prestazionePrezzoInput">Importo</label>
-          <input id="prestazionePrezzoInput" type="number" min="0" step="0.01" placeholder="0.00" />
-        </div>
-      </div>
+      <select id="prestPopupDoctor"></select>
+      <input id="prestPopupName" type="text" placeholder="Nome prestazione" />
+      <input id="prestPopupPerc" type="number" inputmode="decimal" placeholder="Percentuale medico" />
+      <input id="prestPopupPrezzo" type="number" inputmode="decimal" placeholder="Importo automatico" />
       <div class="actions">
         <button class="secondary-btn" type="button" id="cancelPrestazionePopupBtn">Annulla</button>
-        <button type="button" id="savePrestazionePopupBtn">Salva</button>
+        <button class="primary-btn" type="button" id="savePrestazionePopupBtn">Salva</button>
       </div>
     </div>
   </div>
 
-  <div id="spesaPopup" class="popup hidden">
-    <div class="popup-box popup-box-compact">
-      <div class="popup-head">
-        <h2 id="spesaPopupTitle">Nuova uscita</h2>
-        <button class="close-btn" type="button" id="closeSpesaPopupBtn">✕</button>
-      </div>
-      <div class="popup-subtitle">Popup unico, facile e intuitivo</div>
-      <input id="spesaNomeInput" type="text" placeholder="Nome uscita" maxlength="120" />
-      <div id="spesaQuickChips" class="chips-wrap"></div>
-      <div class="category-pills" id="spesaCategoryPills"></div>
-      <input id="spesaImportoInput" type="number" min="0" step="0.01" placeholder="Importo" />
-      <input id="spesaDataInput" type="date" />
-      <input id="spesaNoteInput" type="text" placeholder="Nota facoltativa" maxlength="120" />
-      <div class="actions">
-        <button class="secondary-btn" type="button" id="cancelSpesaPopupBtn">Annulla</button>
-        <button type="button" id="saveSpesaPopupBtn">Salva</button>
-      </div>
-    </div>
-  </div>
 
   <div id="pinOverlay" class="pin-overlay hidden">
     <div class="pin-box card">
