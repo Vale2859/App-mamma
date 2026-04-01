@@ -7,15 +7,11 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="mobile-web-app-capable" content="yes" />
   <title>ANVAMED Manager</title>
-  <link rel="manifest" href="manifest.json" />
-  <link rel="icon" href="anvamed.jpg" />
-  <link rel="apple-touch-icon" href="anvamed.jpg" />
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <div class="app-shell">
     <header class="header">
-      <img src="anvamed.jpg" alt="ANVAMED" class="brand-logo" onerror="this.style.display='none'" />
       <div class="brand-title">ANVAMED</div>
       <div class="brand-subtitle">MANAGER</div>
       <div id="saveStatus" class="save-status">Archivio locale attivo</div>
@@ -140,58 +136,13 @@
           <button class="small-action-btn" type="button" id="addPrestazioneBtn">+ Nuova</button>
         </div>
 
-        <div class="backup-tools backup-tools-inline">
-          <button class="small-action-btn export-backup-btn" type="button">💾 Backup</button>
-          <label class="small-action-btn" for="importFilePrestazioni">📂 Importa</label>
-          <input type="file" id="importFilePrestazioni" accept="application/json" hidden>
-        </div>
-
         <div class="filter-control" style="margin-bottom:12px;">
           <label for="prestazioniDoctorFilter">Medico</label>
           <select id="prestazioniDoctorFilter"></select>
         </div>
 
-        <div class="page-subtitle">Le prestazioni salvate qui compariranno come pillole nella nuova registrazione e imposteranno in automatico sia la % del medico sia il prezzo. Potrai comunque modificare tutto manualmente.</div>
+        <div class="page-subtitle">Le prestazioni salvate qui compariranno come pillole nella nuova registrazione e imposteranno in automatico la % del medico.</div>
         <div id="prestazioniList" class="simple-list"></div>
-      </section>
-
-
-      <section id="spesePage" class="page">
-        <div class="page-head">
-          <h2>Spese</h2>
-          <button class="small-action-btn" type="button" id="addSpesaBtn">+ Nuova</button>
-        </div>
-
-        <div class="backup-tools backup-tools-inline">
-          <button class="small-action-btn export-backup-btn" type="button">💾 Backup</button>
-          <label class="small-action-btn" for="importFileSpese">📂 Importa</label>
-          <input type="file" id="importFileSpese" accept="application/json" hidden>
-        </div>
-
-        <div class="fatture-filters">
-          <div class="filter-control">
-            <label for="speseMonthFilter">Mese</label>
-            <input id="speseMonthFilter" type="month" />
-          </div>
-          <div class="filter-control">
-            <label for="speseCategoryFilter">Categoria</label>
-            <select id="speseCategoryFilter">
-              <option value="tutte">Tutte</option>
-              <option value="affitto">Affitto</option>
-              <option value="utenze">Utenze</option>
-              <option value="fornitori">Fornitori</option>
-              <option value="medici">Compensi medici</option>
-              <option value="materiale">Materiale sanitario</option>
-              <option value="pulizie">Pulizie</option>
-              <option value="farmaci">Farmaci</option>
-              <option value="varie">Varie</option>
-            </select>
-          </div>
-        </div>
-
-        <div id="speseSummary" class="report-grid"></div>
-        <div id="speseCategories" class="simple-list"></div>
-        <div id="speseList" class="cards-list"></div>
       </section>
 
       <section id="reportPage" class="page">
@@ -286,10 +237,6 @@
       <button class="menu-btn" data-page="prestazioniPage" type="button">
         <span class="menu-icon">🧩</span>
         <span class="menu-label">Prestazioni</span>
-      </button>
-      <button class="menu-btn" data-page="spesePage" type="button">
-        <span class="menu-icon">💸</span>
-        <span class="menu-label">Spese</span>
       </button>
       <button class="menu-btn" data-page="reportPage" type="button">
         <span class="menu-icon">📊</span>
