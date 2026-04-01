@@ -46,11 +46,11 @@
           </span>
         </button>
 
-        <button class="secondary-main-btn" type="button" id="newExpenseBtn">
+        <button class="main-btn secondary-main-btn" type="button" id="newExpenseBtn">
           <span class="btn-plus">－</span>
           <span class="btn-text-wrap">
             <span class="btn-title">NUOVA USCITA</span>
-            <span class="btn-subtitle">Inserimento facile e veloce</span>
+            <span class="btn-subtitle">Inserimento rapido e intuitivo</span>
           </span>
         </button>
 
@@ -103,7 +103,7 @@
           <h2 id="doctorDetailName">Medico</h2>
         </div>
 
-        <div class="page-subtitle">Disponibilità settimanale</div>
+        <div class="page-subtitle">Disponibilità settimanale · tocca i giorni in cui viene</div>
         <div id="doctorAvailability" class="giorni"></div>
 
         <div class="detail-tools">
@@ -153,7 +153,7 @@
           <select id="prestazioniDoctorFilter"></select>
         </div>
 
-        <div class="page-subtitle">Le prestazioni salvate qui compariranno come pillole nella nuova registrazione e imposteranno in automatico la % del medico.</div>
+        <div class="page-subtitle">Le prestazioni salvate qui compariranno come pillole nella nuova registrazione e imposteranno in automatico sia la % del medico sia l'importo.</div>
         <div id="prestazioniList" class="simple-list"></div>
       </section>
 
@@ -161,7 +161,7 @@
       <section id="spesePage" class="page">
         <div class="page-head">
           <h2>Spese</h2>
-          <button class="small-action-btn" type="button" id="addExpenseBtnPage">+ Nuova uscita</button>
+          <button class="small-action-btn" type="button" id="addSpesaBtn">+ Nuova uscita</button>
         </div>
 
         <div class="period-tabs">
@@ -175,8 +175,8 @@
         </div>
 
         <div class="page-subtitle" id="spesePeriodoLabel">Periodo selezionato</div>
-        <div id="spesePieWrap" class="pie-wrap"></div>
         <div id="speseCards" class="report-grid"></div>
+        <div id="spesePieWrap" class="pie-wrap"></div>
         <div id="speseList" class="cards-list"></div>
       </section>
 
@@ -350,46 +350,45 @@
   </div>
 
 
-  <div id="expensePopup" class="popup hidden">
-    <div class="popup-box popup-box-compact">
+  <div id="prestazionePopup" class="popup hidden">
+    <div class="popup-box compact-popup">
       <div class="popup-head">
-        <h2 id="expensePopupTitle">Nuova uscita</h2>
-        <button class="close-btn" type="button" id="closeExpensePopupBtn">✕</button>
+        <h2 id="prestazionePopupTitle">Nuova Prestazione</h2>
+        <button class="close-btn" type="button" id="closePrestazionePopupBtn">✕</button>
       </div>
-      <input id="expenseNome" type="text" placeholder="Nome uscita" />
-      <select id="expenseCategoria">
-        <option value="fornitori">Fornitori</option>
-        <option value="medici">Compensi medici</option>
-        <option value="utenze">Utenze</option>
-        <option value="affitto">Affitto</option>
-        <option value="materiale">Materiale sanitario</option>
-        <option value="farmaci">Farmaci</option>
-        <option value="pulizie">Pulizie</option>
-        <option value="varie">Varie</option>
-      </select>
-      <input id="expenseImporto" type="number" inputmode="decimal" placeholder="Importo" />
-      <input id="expenseData" type="date" />
-      <input id="expenseNote" type="text" placeholder="Nota facoltativa" />
+      <select id="prestazionePopupDoctor"></select>
+      <input id="prestazionePopupName" type="text" placeholder="Nome prestazione" maxlength="120" />
+      <div class="popup-extra-grid three">
+        <div class="perc-group">
+          <label for="prestazionePopupPerc">% Medico</label>
+          <input id="prestazionePopupPerc" type="number" min="0" max="100" value="60" />
+        </div>
+        <div class="perc-group">
+          <label for="prestazionePopupPrice">Importo</label>
+          <input id="prestazionePopupPrice" type="number" min="0" step="0.01" placeholder="0.00" />
+        </div>
+      </div>
       <div class="actions">
-        <button class="secondary-btn" type="button" id="cancelExpensePopupBtn">Annulla</button>
-        <button class="primary-btn" type="button" id="saveExpensePopupBtn">Salva</button>
+        <button class="secondary-btn" type="button" id="cancelPrestazionePopupBtn">Annulla</button>
+        <button class="primary-btn" type="button" id="savePrestazionePopupBtn">Salva</button>
       </div>
     </div>
   </div>
 
-  <div id="prestazionePopup" class="popup hidden">
-    <div class="popup-box popup-box-compact">
+  <div id="spesaPopup" class="popup hidden">
+    <div class="popup-box compact-popup">
       <div class="popup-head">
-        <h2 id="prestazionePopupTitle">Nuova prestazione</h2>
-        <button class="close-btn" type="button" id="closePrestazionePopupBtn">✕</button>
+        <h2 id="spesaPopupTitle">Nuova Uscita</h2>
+        <button class="close-btn" type="button" id="closeSpesaPopupBtn">✕</button>
       </div>
-      <select id="prestPopupDoctor"></select>
-      <input id="prestPopupName" type="text" placeholder="Nome prestazione" />
-      <input id="prestPopupPerc" type="number" inputmode="decimal" placeholder="Percentuale medico" />
-      <input id="prestPopupPrezzo" type="number" inputmode="decimal" placeholder="Importo automatico" />
+      <input id="spesaPopupName" type="text" placeholder="Nome uscita" maxlength="120" />
+      <div id="spesaCategoryChips" class="chips-wrap"></div>
+      <input id="spesaPopupDate" type="date" />
+      <input id="spesaPopupAmount" type="number" min="0" step="0.01" placeholder="Importo" />
+      <input id="spesaPopupNote" type="text" placeholder="Nota facoltativa" maxlength="150" />
       <div class="actions">
-        <button class="secondary-btn" type="button" id="cancelPrestazionePopupBtn">Annulla</button>
-        <button class="primary-btn" type="button" id="savePrestazionePopupBtn">Salva</button>
+        <button class="secondary-btn" type="button" id="cancelSpesaPopupBtn">Annulla</button>
+        <button class="primary-btn" type="button" id="saveSpesaPopupBtn">Salva</button>
       </div>
     </div>
   </div>
