@@ -1520,38 +1520,168 @@ body{
   }
 }
 
+.main-btn-expense{
+  background:linear-gradient(90deg,#f6c94c,#f2a83f);
+  color:#fff;
+  box-shadow:0 14px 30px rgba(242,168,63,.24);
+}
 
-.secondary-main-btn{
-  background:linear-gradient(90deg,#f0c74f,#eea93d);
-  box-shadow:0 14px 30px rgba(238,169,61,.20);
+.popup-box-compact{
+  max-width:460px;
+  border-radius:28px 28px 0 0;
 }
-.secondary-main-btn .btn-plus{ color:#c68412; }
-.compact-popup{ max-width:460px; }
-.popup-extra-grid.three{
-  grid-template-columns:repeat(2,1fr);
-  gap:10px;
-  margin-bottom:10px;
+
+.popup-subtitle{
+  color:var(--muted);
+  font-weight:700;
+  margin:-2px 0 12px;
+  font-size:.84rem;
 }
-.chips-wrap .chip-btn.selected{
+
+.category-pills{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 10px;
+}
+.category-pill{
+  border:none;
+  border-radius:999px;
+  padding:10px 12px;
+  background:#f2f6fa;
+  color:#52606d;
+  font-weight:800;
+  font-size:.8rem;
+}
+.category-pill.active{
   background:linear-gradient(90deg,var(--green),var(--blue));
   color:#fff;
 }
-.spesa-card-line{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
-.spesa-card-main{ min-width:0; flex:1; }
-.spesa-card-name{ font-weight:900; font-size:1rem; }
-.spesa-card-meta{ color:var(--muted); font-size:.82rem; margin-top:4px; }
-.spesa-card-right{ text-align:right; font-weight:900; }
+.spesa-card{
+  background:#fff;
+  border-radius:20px;
+  box-shadow:var(--shadow);
+  padding:14px;
+}
+.spesa-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+}
+.spesa-name{
+  font-weight:900;
+  font-size:1rem;
+}
+.spesa-sub{
+  color:var(--muted);
+  font-size:.82rem;
+  font-weight:700;
+  margin-top:4px;
+}
+.spesa-importo{
+  font-weight:900;
+  font-size:1.02rem;
+  white-space:nowrap;
+}
 .spesa-chip{
-  display:inline-block;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
   margin-top:8px;
-  padding:5px 10px;
   border-radius:999px;
-  background:#eff4f8;
-  color:#4f6070;
+  background:#f3f7fb;
+  padding:7px 10px;
   font-size:.78rem;
   font-weight:800;
+  color:#405163;
+}
+.trend-card{
+  background:#fff;
+  border-radius:22px;
+  box-shadow:var(--shadow);
+  padding:14px;
+}
+.trend-title{
+  font-weight:900;
+  margin-bottom:10px;
+}
+.trend-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.trend-row{
+  display:grid;
+  grid-template-columns:74px 1fr auto;
+  gap:10px;
+  align-items:center;
+}
+.trend-bar{
+  height:10px;
+  background:#eef3f8;
+  border-radius:999px;
+  overflow:hidden;
+}
+.trend-bar > span{
+  display:block;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg,var(--green),var(--blue));
+}
+.prestazione-row-sub{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
 }
 @media (max-width:390px){
-  .menu{grid-template-columns:repeat(6,1fr);}
-  .menu-label{font-size:.62rem;}
+  .main-btn{padding:13px;}
+  .btn-title{font-size:.94rem;}
+  .btn-subtitle{font-size:.72rem;}
 }
+
+
+/* Final fixes */
+html, body, .app-shell{overflow-x:hidden;}
+.header{padding-top:calc(10px + env(safe-area-inset-top));}
+.brand-logo-full{width:108px;height:108px;object-fit:contain;display:block;margin:0 auto 14px;border-radius:28px;background:#fff;padding:10px;box-shadow:var(--shadow);}
+.giorni span{position:relative;transition:transform .12s ease, box-shadow .12s ease, background .18s ease;box-shadow:inset 0 0 0 1px rgba(27,44,70,.05);}
+.giorni span:active{transform:scale(.96);}
+.giorni span.active{box-shadow:0 10px 20px rgba(45,140,255,.18);}
+.giorni span.active::after{content:"";position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#fff;opacity:.98;}
+.popup{overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;padding:18px 12px calc(18px + env(safe-area-inset-bottom));}
+.popup-box{width:min(100%, 760px);max-width:100%;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;touch-action:pan-y;scrollbar-gutter:stable; margin:0 auto;}
+.popup-box *, .popup-box input, .popup-box select{max-width:100%;}
+.popup-box-compact{max-width:min(100%, 560px);}
+.popup-head{position:sticky;top:0;background:#fff;z-index:2;padding-bottom:8px;}
+.period-tabs .tab, .toolbar .tab{transition:background .16s ease, color .16s ease, transform .12s ease;}
+.period-tabs .tab:active, .toolbar .tab:active{transform:scale(.98);}
+.report-grid{align-items:stretch;}
+.report-card{min-height:108px;}
+.fatture-grid{display:grid;grid-template-columns:1fr;gap:12px;}
+.fattura-card{break-inside:avoid;page-break-inside:avoid;}
+.pie-card,.report-card,.fattura-card,.simple-medico-row,.prestazione-row,.medico-card,.category-row{break-inside:avoid;page-break-inside:avoid;}
+@media print{
+  body{background:#fff !important;}
+  .app-shell{max-width:none !important;background:#fff !important;}
+  .header,.menu,.back-btn,.small-action-btn,.main-btn,.icon-btn,.popup,.pin-overlay,.detail-tools,.backup-tools,.calendar-open-btn{display:none !important;}
+  .main-content{padding:0 !important;}
+  .page{display:none !important;}
+  #reportPage.active,#fatturePage.active,#doctorDetailPage.active{display:block !important;}
+  #reportPage.active *,#fatturePage.active *,#doctorDetailPage.active *{visibility:visible !important;}
+  .filter-box,.period-tabs,.fatture-filters{display:block !important;margin:0 0 12px !important;}
+  .filter-control{background:#fff !important;box-shadow:none !important;border:1px solid #d9dee5 !important;break-inside:avoid;page-break-inside:avoid;}
+  .card,.pie-card,.fattura-card,.medico-card,.report-card,.stats-card,.top-services-card{box-shadow:none !important;border:1px solid #d9dee5 !important;background:#fff !important;}
+  .report-grid{display:grid !important;grid-template-columns:repeat(2, minmax(0,1fr)) !important;gap:12px !important;}
+  .fatture-grid{display:grid !important;grid-template-columns:1fr !important;gap:12px !important;}
+  .pie-layout{display:block !important;}
+  .pie-svg{display:block;margin:0 auto 16px !important;max-width:280px !important;height:auto !important;}
+  .pie-legend{display:block !important;}
+  .legend-row{border-bottom:1px solid #eef2f6;padding:6px 0;}
+  .report-card-title,.fattura-name,.top-services-title,.page-subtitle{color:#445266 !important;}
+  .report-card-value,.fattura-amount,strong,h2{color:#111827 !important;}
+}
+
+.giorni button{aspect-ratio:1/1;border-radius:50%;display:grid;place-items:center;background:#e6edf3;color:#52606d;font-weight:900;user-select:none;cursor:pointer;border:none;position:relative;transition:transform .12s ease, box-shadow .12s ease, background .18s ease;}
+.giorni button.active{color:#fff;background:linear-gradient(135deg,var(--green),var(--blue));box-shadow:0 10px 20px rgba(45,140,255,.18);}
+.giorni button.active::after{content:"";position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#fff;}
