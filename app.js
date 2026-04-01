@@ -329,6 +329,7 @@ function renderPrestazioneChips() {
 }
 
 function openEntryPopup(entryId = null, forcedDoctorId = null, forcedDate = null) {
+  document.body.classList.add("popup-open");
   if (!doctors.length) return alert("Inserisci prima almeno un medico");
   editingEntryId = entryId;
   document.getElementById("popup").classList.remove("hidden");
@@ -361,7 +362,7 @@ function openEntryPopup(entryId = null, forcedDoctorId = null, forcedDate = null
   applyRegisteredPercentForPopup();
   updatePopupPreview(); renderPrestazioneChips(); document.getElementById("popupPrestazioneSearch").focus();
 }
-function closeEntryPopup() { document.getElementById("popup").classList.add("hidden"); editingEntryId = null; }
+function closeEntryPopup() { document.getElementById("popup").classList.add("hidden"); document.body.classList.remove("popup-open"); editingEntryId = null; }
 
 function updatePopupPreview() {
   const amount = parseFloat(document.getElementById("popupImporto").value) || 0;
@@ -559,6 +560,7 @@ function openPrestazionePopup(doctorId, currentName = "") {
 
 function closePrestazionePopup() {
   document.getElementById("prestazionePopup").classList.add("hidden");
+  document.body.classList.remove("popup-open");
   editingPrestazioneDoctorId = null; editingPrestazioneName = "";
 }
 
@@ -620,6 +622,7 @@ function renderSpeseFilterControl() {
 }
 
 function openExpensePopup(id = null) {
+  document.body.classList.add("popup-open");
   editingExpenseId = id;
   document.getElementById("expensePopupTitle").textContent = id ? "Modifica uscita" : "Nuova uscita";
   const item = id ? spese.find((s) => s.id === id) : null;
@@ -634,6 +637,7 @@ function openExpensePopup(id = null) {
 function closeExpensePopup() {
   editingExpenseId = null;
   document.getElementById("expensePopup").classList.add("hidden");
+  document.body.classList.remove("popup-open");
 }
 
 function saveExpense() {
@@ -799,33 +803,65 @@ function importDataFromFile(file) {
   reader.readAsText(file);
 }
 
+
 function setupEventListeners() {
-  document.getElementById("newRegistrationBtn").addEventListener("click", () => openEntryPopup());
-  document.getElementById("newExpenseBtn").addEventListener("click", () => openExpensePopup());
-  document.getElementById("openCalendarBtn").addEventListener("click", () => go("calendarPage"));
-  document.getElementById("addDoctorBtn").addEventListener("click", addDoctor);
-  document.getElementById("backToDoctorsBtn").addEventListener("click", () => go("mediciPage"));
-  document.getElementById("backToHomeBtn").addEventListener("click", () => go("homePage"));
-  document.getElementById("quickAddDoctorBtn").addEventListener("click", () => { if (!currentDoctorId) return; const month = document.getElementById("doctorDetailMonth").value || currentMonthISO(); openEntryPopup(null, currentDoctorId, month === currentMonthISO() ? todayISO() : `${month}-01`); });
-  document.getElementById("printDoctorBtn").addEventListener("click", printDoctorDetail);
-  document.getElementById("addPrestazioneBtn").addEventListener("click", addPrestazioneConfig);
-  document.getElementById("addExpenseBtnPage").addEventListener("click", () => openExpensePopup());
-  document.getElementById("prestazioniDoctorFilter").addEventListener("change", (event) => { currentDoctorId = Number(event.target.value) || currentDoctorId; renderPrestazioniPage(); saveUiState(); });
-  document.getElementById("printReportBtn").addEventListener("click", printReport);
-  document.getElementById("printInvoicesBtn").addEventListener("click", printInvoices);
-  document.getElementById("exportBackupBtn").addEventListener("click", exportData);
-  document.getElementById("importFile").addEventListener("change", (event) => importDataFromFile(event.target.files[0]));
-  document.getElementById("homeTabGiorno").addEventListener("click", () => setHomeFiltroTipo("giorno"));
-  document.getElementById("homeTabMese").addEventListener("click", () => setHomeFiltroTipo("mese"));
-  document.getElementById("homeTabAnno").addEventListener("click", () => setHomeFiltroTipo("anno"));
-  document.getElementById("reportTabGiorno").addEventListener("click", () => setReportFiltroTipo("giorno"));
-  document.getElementById("reportTabMese").addEventListener("click", () => setReportFiltroTipo("mese"));
-  document.getElementById("reportTabAnno").addEventListener("click", () => setReportFiltroTipo("anno"));
-  document.querySelectorAll(".menu-btn").forEach((btn) => btn.addEventListener("click", () => go(btn.dataset.page)));
-  document.getElementById("closePopupBtn").addEventListener("click", closeEntryPopup);
-  document.getElementById("cancelPopupBtn").addEventListener("click", closeEntryPopup);
-  document.getElementById("savePopupBtn").addEventListener("click", saveEntry);
-  document.getElementById("popupDoctorSelect").addEventListener("change", () => {
+  const bind = (id, event, handler) => {
+    const el = document.getElementById(id);
+    if (el) el.addEventListener(event, handler);
+  };
+  const bindAll = (selector, event, handler) => {
+    document.querySelectorAll(selector).forEach((el) => el.addEventListener(event, handler));
+  };
+
+  bind("newRegistrationBtn", "click", () => openEntryPopup());
+  bind("newExpenseBtn", "click", () => openExpensePopup());
+  bind("openCalendarBtn", "click", () => go("calendarPage"));
+  bind("addDoctorBtn", "click", addDoctor);
+  bind("backToDoctorsBtn", "click", () => go("mediciPage"));
+  bind("backToHomeBtn", "click", () => go("homePage"));
+  bind("quickAddDoctorBtn", "click", () => {
+    if (!currentDoctorId) return;
+    const month = document.getElementById("doctorDetailMonth").value || currentMonthISO();
+    openEntryPopup(null, currentDoctorId, month === currentMonthISO() ? todayISO() : `${month}-01`);
+  });
+  bind("printDoctorBtn", "click", printDoctorDetail);
+  bind("addPrestazioneBtn", "click", addPrestazioneConfig);
+  bind("addExpenseBtnPage", "click", () => openExpensePopup());
+  bind("prestazioniDoctorFilter", "change", (event) => {
+    currentDoctorId = Number(event.target.value) || currentDoctorId;
+    renderPrestazioniPage();
+    saveUiState();
+  });
+  bind("printReportBtn", "click", printReport);
+  bind("printInvoicesBtn", "click", printInvoices);
+  bind("exportBackupBtn", "click", exportData);
+  bind("importFile", "change", (event) => importDataFromFile(event.target.files[0]));
+
+  bind("homeTabGiorno", "click", () => setHomeFiltroTipo("giorno"));
+  bind("homeTabMese", "click", () => setHomeFiltroTipo("mese"));
+  bind("homeTabAnno", "click", () => setHomeFiltroTipo("anno"));
+  bind("reportTabGiorno", "click", () => setReportFiltroTipo("giorno"));
+  bind("reportTabMese", "click", () => setReportFiltroTipo("mese"));
+  bind("reportTabAnno", "click", () => setReportFiltroTipo("anno"));
+  bind("speseTabGiorno", "click", () => { speseFilterType = "giorno"; speseFilterValue = todayISO(); renderSpesePage(); });
+  bind("speseTabMese", "click", () => { speseFilterType = "mese"; speseFilterValue = currentMonthISO(); renderSpesePage(); });
+  bind("speseTabAnno", "click", () => { speseFilterType = "anno"; speseFilterValue = currentYearISO(); renderSpesePage(); });
+
+  bindAll(".menu-btn", "click", (e) => go(e.currentTarget.dataset.page));
+
+  bind("closePopupBtn", "click", closeEntryPopup);
+  bind("cancelPopupBtn", "click", closeEntryPopup);
+  bind("savePopupBtn", "click", saveEntry);
+
+  bind("closeExpensePopupBtn", "click", closeExpensePopup);
+  bind("cancelExpensePopupBtn", "click", closeExpensePopup);
+  bind("saveExpensePopupBtn", "click", saveExpense);
+
+  bind("closePrestazionePopupBtn", "click", closePrestazionePopup);
+  bind("cancelPrestazionePopupBtn", "click", closePrestazionePopup);
+  bind("savePrestazionePopupBtn", "click", savePrestazionePopup);
+
+  bind("popupDoctorSelect", "change", () => {
     if (!editingEntryId) {
       document.getElementById("popupPrestazione").value = "";
       document.getElementById("popupPrestazioneSearch").value = "";
@@ -836,25 +872,44 @@ function setupEventListeners() {
     renderPrestazioneChips();
     applyRegisteredPercentForPopup();
   });
-  document.getElementById("popupPrestazioneSearch").addEventListener("input", renderPrestazioneChips);
-  document.getElementById("popupPrestazione").addEventListener("change", applyRegisteredPercentForPopup);
-  document.getElementById("popupPrestazione").addEventListener("blur", applyRegisteredPercentForPopup);
-  document.getElementById("popupPercMedico").addEventListener("input", (event) => { let value = Math.max(0, Math.min(100, parseFloat(event.target.value) || 0)); event.target.value = value; document.getElementById("popupPercStruttura").value = 100 - value; updatePopupPreview(); });
-  document.getElementById("popupPercStruttura").addEventListener("input", (event) => { let value = Math.max(0, Math.min(100, parseFloat(event.target.value) || 0)); event.target.value = value; document.getElementById("popupPercMedico").value = 100 - value; updatePopupPreview(); });
-  document.getElementById("popupImporto").addEventListener("input", updatePopupPreview);
-  document.getElementById("doctorDetailMonth").addEventListener("change", renderDoctorDetail);
-  document.getElementById("fattureDateFrom").addEventListener("change", renderInvoices);
-  document.getElementById("fattureDateTo").addEventListener("change", renderInvoices);
-  document.getElementById("fattureStatusFilter").addEventListener("change", renderInvoices);
-  document.getElementById("fattureTypeFilter").addEventListener("change", renderInvoices);
-  document.getElementById("calendarMonth").addEventListener("change", renderCalendar);
-  document.getElementById("pinUnlockBtn").addEventListener("click", unlockWithPin);
-  document.getElementById("pinInput").addEventListener("keydown", (event) => { if (event.key === "Enter") unlockWithPin(); });
-  document.getElementById("popup").addEventListener("click", (event) => { if (event.target.id === "popup") closeEntryPopup(); });
-  document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !document.getElementById("popup").classList.contains("hidden")) closeEntryPopup(); });
+  bind("popupPrestazioneSearch", "input", renderPrestazioneChips);
+  bind("popupPrestazione", "change", applyRegisteredPercentForPopup);
+  bind("popupPrestazione", "blur", applyRegisteredPercentForPopup);
+  bind("popupPercMedico", "input", (event) => {
+    let value = Math.max(0, Math.min(100, parseFloat(event.target.value) || 0));
+    event.target.value = value;
+    document.getElementById("popupPercStruttura").value = 100 - value;
+    updatePopupPreview();
+  });
+  bind("popupPercStruttura", "input", (event) => {
+    let value = Math.max(0, Math.min(100, parseFloat(event.target.value) || 0));
+    event.target.value = value;
+    document.getElementById("popupPercMedico").value = 100 - value;
+    updatePopupPreview();
+  });
+  bind("popupImporto", "input", updatePopupPreview);
+  bind("doctorDetailMonth", "change", renderDoctorDetail);
+  bind("fattureDateFrom", "change", renderInvoices);
+  bind("fattureDateTo", "change", renderInvoices);
+  bind("fattureStatusFilter", "change", renderInvoices);
+  bind("fattureTypeFilter", "change", renderInvoices);
+  bind("calendarMonth", "change", renderCalendar);
+  bind("pinUnlockBtn", "click", unlockWithPin);
+  bind("pinInput", "keydown", (event) => { if (event.key === "Enter") unlockWithPin(); });
+  bind("popup", "click", (event) => { if (event.target.id === "popup") closeEntryPopup(); });
+  bind("expensePopup", "click", (e) => { if (e.target.id === "expensePopup") closeExpensePopup(); });
+  bind("prestazionePopup", "click", (e) => { if (e.target.id === "prestazionePopup") closePrestazionePopup(); });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      if (!document.getElementById("popup")?.classList.contains("hidden")) closeEntryPopup();
+      if (!document.getElementById("expensePopup")?.classList.contains("hidden")) closeExpensePopup();
+      if (!document.getElementById("prestazionePopup")?.classList.contains("hidden")) closePrestazionePopup();
+    }
+  });
 }
 
-function lockApp() {
+function lockApp( {
   isUnlocked = false;
   document.getElementById("pinOverlay")?.classList.remove("hidden");
   document.getElementById("pinError")?.classList.add("hidden");
@@ -922,8 +977,6 @@ function boot() {
 document.addEventListener("DOMContentLoaded", boot);
 
 
-document.getElementById("expensePopup").addEventListener("click", (e) => { if (e.target.id === "expensePopup") closeExpensePopup(); });
-document.getElementById("prestazionePopup").addEventListener("click", (e) => { if (e.target.id === "prestazionePopup") closePrestazionePopup(); });
 
 
 
@@ -1082,3 +1135,17 @@ document.getElementById("prestazionePopup").addEventListener("click", (e) => { i
     }
   });
 })();
+
+document.addEventListener("click", function(event){
+  const btn = event.target.closest("[data-availability-toggle], .giorno-btn, .day-pill, .weekday-chip, .week-day-btn");
+  if (!btn) return;
+  const value = btn.dataset.availabilityToggle || btn.dataset.day || btn.dataset.value || btn.textContent.trim();
+  if (!currentDoctorId) return;
+  const doctor = doctors.find((d) => d.id === currentDoctorId);
+  if (!doctor) return;
+  doctor.availability = Array.isArray(doctor.availability) ? doctor.availability : [];
+  const idx = doctor.availability.indexOf(value);
+  if (idx >= 0) doctor.availability.splice(idx, 1); else doctor.availability.push(value);
+  saveAll();
+  if (typeof renderDoctorDetail === "function") renderDoctorDetail();
+});
