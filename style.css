@@ -1685,3 +1685,27 @@ html, body, .app-shell{overflow-x:hidden;}
 .giorni button{aspect-ratio:1/1;border-radius:50%;display:grid;place-items:center;background:#e6edf3;color:#52606d;font-weight:900;user-select:none;cursor:pointer;border:none;position:relative;transition:transform .12s ease, box-shadow .12s ease, background .18s ease;}
 .giorni button.active{color:#fff;background:linear-gradient(135deg,var(--green),var(--blue));box-shadow:0 10px 20px rgba(45,140,255,.18);}
 .giorni button.active::after{content:"";position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:8px;height:8px;border-radius:50%;background:#fff;}
+
+
+/* final repair patches */
+.header{padding-inline:16px;}
+.brand-logo-full{width:148px !important;height:148px !important;border-radius:36px !important;padding:0 !important;background:transparent !important;box-shadow:none !important;object-fit:contain !important;}
+.period-tabs .tab.active{background:linear-gradient(135deg,var(--green),var(--blue)) !important;color:#fff !important;box-shadow:0 12px 24px rgba(45,140,255,.16);}
+#spesePage .toolbar{display:block;}
+#spesePage .toolbar .period-tabs{margin-bottom:12px;}
+#spesePage .filter-box{margin-bottom:12px;}
+.popup,.popup-box,.popup-body{overflow-x:hidden !important;}
+.popup-box{touch-action:pan-y !important;}
+body.modal-open{overflow:hidden;}
+.giorni button{pointer-events:auto;z-index:1;}
+@media print{
+  .menu,.page-head .small-action-btn,.back-btn,.detail-tools .small-action-btn,.toolbar .calendar-open-btn,.backup-tools,.popup,.pin-overlay{display:none !important;}
+  .header{padding:0 0 14px !important;}
+  .brand-logo-full{width:82px !important;height:82px !important;margin:0 auto 10px !important;}
+  .brand-title{font-size:34px !important;}
+  .brand-subtitle{font-size:14px !important;letter-spacing:4px !important;}
+  .main-content{padding:0 !important;}
+  .page{padding:0 !important;}
+  .report-grid{grid-template-columns:repeat(2,minmax(0,1fr)) !important;gap:10px !important;}
+  .card,.report-card,.fattura-card,.medico-card,.top-services-card,.stats-card,.pie-card,.simple-medico-row,.prestazione-row,.category-row{border:1px solid #d8dee7 !important;box-shadow:none !important;border-radius:14px !important;}
+}

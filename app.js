@@ -349,6 +349,7 @@ function renderPrestazioneChips() {
 }
 
 function openEntryPopup(entryId = null, forcedDoctorId = null, forcedDate = null) {
+  document.body.classList.add("modal-open");
   if (!doctors.length) return alert("Inserisci prima almeno un medico");
   editingEntryId = entryId;
   document.getElementById("popup").classList.remove("hidden");
@@ -381,7 +382,7 @@ function openEntryPopup(entryId = null, forcedDoctorId = null, forcedDate = null
   applyRegisteredPercentForPopup();
   updatePopupPreview(); renderPrestazioneChips(); document.getElementById("popupPrestazioneSearch").focus();
 }
-function closeEntryPopup() { document.getElementById("popup").classList.add("hidden"); editingEntryId = null; }
+function closeEntryPopup() { document.getElementById("popup").classList.add("hidden"); document.body.classList.remove("modal-open"); editingEntryId = null; }
 function updatePopupPreview() {
   const amount = parseFloat(document.getElementById("popupImporto").value) || 0;
   const percMedico = Math.max(0, Math.min(100, parseFloat(document.getElementById("popupPercMedico").value) || 0));
@@ -505,6 +506,8 @@ function renderDoctorDetail() {
   const month = normalizeMonthISO(document.getElementById("doctorDetailMonth").value || currentMonthISO(), currentMonthISO()); document.getElementById("doctorDetailMonth").value = month;
   const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
   document.getElementById("doctorDetailName").textContent = doctor.name; document.getElementById("doctorMonthLabel").textContent = `Prestazioni di ${monthLabel(month)}`;
+  document.getElementById("doctorAvailability").innerHTML = WEEK_DAYS.map((label, idx) => { const key = `${label}-${idx}`; const active = doctor.availability.includes(key); return `<button type="button" class="${active ? "active" : ""}" aria-pressed="${active ? "true" : "false"}" data-availability-key="${key}" title="${label}">${label[0]}</button>`; }).join("");
+  document.querySelectorAll("#doctorAvailability [data-availability-key]").forEach((el) => el.addEventListener("click", () => toggleDoctorAvailability(el.dataset.availabilityKey)));
   const list = entries.filter((entry) => entry.doctorId === currentDoctorId && entry.data.startsWith(month)).sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
   document.getElementById("doctorTotMedico").textContent = currency(list.reduce((s, e) => s + e.quotaMedico, 0));
   document.getElementById("doctorTotStruttura").textContent = currency(list.reduce((s, e) => s + e.quotaStruttura, 0));
@@ -589,7 +592,23 @@ function removePrestazioneConfig(doctorId, name) {
   renderPrestazioniPage();
 }
 
-function printDoctorDetail() { document.body.classList.add("printing-doctor"); window.print(); setTimeout(() => document.body.classList.remove("printing-doctor"), 300); }
+function openPrintWindow(title, bodyHtml) {
+  const win = window.open("", "_blank", "width=960,height=1200");
+  if (!win) { window.print(); return; }
+  win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="utf-8"><title>${title}</title><style>body{font-family:Arial,sans-serif;color:#17212b;padding:24px} .head{text-align:center;margin-bottom:24px} .head img{width:86px;height:86px;object-fit:contain;display:block;margin:0 auto 10px} .head h1{margin:0;font-size:34px} .head h2{margin:4px 0 0;font-size:14px;letter-spacing:4px;color:#6b7684} .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px} .card{border:1px solid #d9dee5;border-radius:14px;padding:14px;margin:0 0 12px;break-inside:avoid;page-break-inside:avoid} .list-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #edf1f5} .muted{color:#687789} .title{font-size:28px;font-weight:800;margin:0 0 14px} .subtitle{font-size:18px;font-weight:700;margin:18px 0 10px} .days{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 14px} .day{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#e6edf3;color:#52606d;font-weight:900} .day.active{background:linear-gradient(135deg,#56d39b,#3182f6);color:#fff} .small{font-size:12px}.right{text-align:right}</style></head><body><div class="head"><img src="anvamed.jpg" alt="ANVAMED"><h1>ANVAMED</h1><h2>MANAGER</h2></div>${bodyHtml}</body></html>`);
+  win.document.close();
+  setTimeout(() => { win.focus(); win.print(); }, 250);
+}
+
+function printDoctorDetail() {
+  const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
+  const month = document.getElementById("doctorDetailMonth").value || currentMonthISO();
+  const list = entries.filter((entry) => entry.doctorId === currentDoctorId && entry.data.startsWith(month)).sort((a,b)=>b.data.localeCompare(a.data)||b.id-a.id);
+  const availability = WEEK_DAYS.map((label, idx) => `<span class="day ${doctor.availability.includes(`${label}-${idx}`) ? "active" : ""}">${label[0]}</span>`).join("");
+  const rows = list.map((entry) => `<div class="list-row"><div><strong>${escapeHtml(entry.prestazione)}</strong><div class="muted small">${formatDateLabel(entry.data)} · ${entry.tipoVoce} · ${entry.pagamento}</div></div><div class="right"><strong>${currency(entry.importo)}</strong><div class="muted small">Medico ${currency(entry.quotaMedico)} · Struttura ${currency(entry.quotaStruttura)}</div></div></div>`).join("") || `<div class="card">Nessuna prestazione nel periodo selezionato.</div>`;
+  const html = `<div class="title">${escapeHtml(doctor.name)}</div><div class="subtitle">Disponibilità settimanale</div><div class="days">${availability}</div><div class="subtitle">Mese selezionato: ${monthLabel(month)}</div><div class="grid"><div class="card"><div class="muted">Guadagno medico</div><strong>${document.getElementById("doctorTotMedico").textContent}</strong></div><div class="card"><div class="muted">Guadagno struttura</div><strong>${document.getElementById("doctorTotStruttura").textContent}</strong></div><div class="card"><div class="muted">Prestazioni</div><strong>${document.getElementById("doctorTotPrestazioni").textContent}</strong></div></div><div class="subtitle">Prestazioni del mese</div><div class="card">${rows}</div>`;
+  openPrintWindow("Stampa medico", html);
+}
 
 function buildPieSVG(items) {
   const total = items.reduce((sum, item) => sum + item.value, 0); if (!total) return "";
@@ -626,7 +645,13 @@ function renderReport() {
   `;
 }
 
-function printReport() { document.body.classList.add("printing-report"); window.print(); setTimeout(() => document.body.classList.remove("printing-report"), 300); }
+function printReport() {
+  const title = document.getElementById("reportPeriodoLabel").textContent || "Report";
+  const pie = document.getElementById("reportPieWrap").innerHTML;
+  const cards = document.getElementById("reportCards").innerHTML;
+  const html = `<div class="title">Report</div><div class="subtitle">${escapeHtml(title)}</div>${pie}<div class="grid">${cards}</div>`;
+  openPrintWindow("Report", html);
+}
 function invoiceKey(doctorId, fromDate, toDate, type) { return `${doctorId}__${fromDate}__${toDate}__${type}`; }
 function getInvoiceFilters() {
   const fromDate = normalizeDateISO(document.getElementById("fattureDateFrom").value, monthStartISO(currentMonthISO()));
@@ -659,7 +684,14 @@ function renderInvoices() {
   wrap.querySelectorAll("[data-invoice-doctor]").forEach((btn) => btn.addEventListener("click", () => cycleInvoiceStatus(Number(btn.dataset.invoiceDoctor), fromDate, toDate, type)));
   saveUiState();
 }
-function printInvoices() { document.body.classList.add("printing-invoices"); window.print(); setTimeout(() => document.body.classList.remove("printing-invoices"), 300); }
+function printInvoices() {
+  const from = document.getElementById("fattureDateFrom").value;
+  const to = document.getElementById("fattureDateTo").value;
+  const summary = document.getElementById("fattureSummary").innerHTML;
+  const grid = document.getElementById("fattureGrid").innerHTML;
+  const html = `<div class="title">Fatture</div><div class="subtitle">Periodo: ${formatDateLabel(from)} → ${formatDateLabel(to)}</div><div class="grid">${summary}</div><div class="subtitle">Medici nel periodo</div>${grid}`;
+  openPrintWindow("Fatture", html);
+}
 
 function daysInMonth(year, monthIndex) { return new Date(year, monthIndex + 1, 0).getDate(); }
 function renderCalendar() {
