@@ -2,6 +2,7 @@ const STORAGE_KEYS = {
   doctors: "anvamed_doctors_v5",
   entries: "anvamed_entries_v5",
   invoiceStates: "anvamed_invoice_states_v5",
+  spese: "anvamed_spese_v1",
   uiState: "anvamed_ui_state_v5"
 };
 
@@ -9,6 +10,7 @@ const LEGACY_STORAGE_KEYS = {
   doctors: "anvamed_doctors_v4",
   entries: "anvamed_entries_v4",
   invoiceStates: "anvamed_invoice_states_v4",
+  spese: "anvamed_spese_v1",
   uiState: "anvamed_ui_state_v4"
 };
 
@@ -18,10 +20,21 @@ const DEFAULT_PRESTAZIONI = [
   "ECG", "Holter pressorio", "Holter cardiaco", "Spirometria", "Analisi pelle viso",
   "Teledermatologia", "Autoanalisi", "Foratura lobi", "Controllo pressione oculare"
 ];
+const SPESE_CATEGORIES = [
+  { key: "affitto", label: "Affitto" },
+  { key: "utenze", label: "Utenze" },
+  { key: "fornitori", label: "Fornitori" },
+  { key: "medici", label: "Compensi medici" },
+  { key: "materiale", label: "Materiale sanitario" },
+  { key: "pulizie", label: "Pulizie" },
+  { key: "farmaci", label: "Farmaci" },
+  { key: "varie", label: "Varie" }
+];
 
 let doctors = [];
 let entries = [];
 let invoiceStates = {};
+let spese = [];
 
 let currentDoctorId = null;
 let editingEntryId = null;
@@ -29,6 +42,8 @@ let homeFilterType = "giorno";
 let homeFilterValue = "";
 let reportFilterType = "giorno";
 let reportFilterValue = "";
+let speseFilterType = "giorno";
+let speseFilterValue = "";
 let currentPage = "homePage";
 let isUnlocked = false;
 let lastHiddenAt = 0;
@@ -74,15 +89,16 @@ function findDoctorPrestazione(doctorId, prestazioneName) {
   if (!q) return null;
   return getDoctorPrestazioni(doctorId).find((item) => item.name.trim().toLowerCase() === q) || null;
 }
-function upsertDoctorPrestazione(doctorId, name, percMedico) {
+function upsertDoctorPrestazione(doctorId, name, percMedico, prezzo = 0) {
   const doctor = getDoctorById(doctorId); if (!doctor) return false;
   const cleanName = String(name || "").trim();
   const safePerc = Math.max(0, Math.min(100, Number(percMedico)));
+  const safePrezzo = Number.isFinite(Number(prezzo)) ? Math.max(0, Number(prezzo)) : 0;
   if (!cleanName || !Number.isFinite(safePerc)) return false;
   doctor.prestazioni = Array.isArray(doctor.prestazioni) ? doctor.prestazioni : [];
   const existing = doctor.prestazioni.find((item) => item.name.toLowerCase() === cleanName.toLowerCase());
-  if (existing) { existing.name = cleanName; existing.percMedico = Number(safePerc.toFixed(2)); }
-  else doctor.prestazioni.push({ id: createId(), name: cleanName, percMedico: Number(safePerc.toFixed(2)) });
+  if (existing) { existing.name = cleanName; existing.percMedico = Number(safePerc.toFixed(2)); existing.prezzo = Number(safePrezzo.toFixed(2)); }
+  else doctor.prestazioni.push({ id: createId(), name: cleanName, percMedico: Number(safePerc.toFixed(2)), prezzo: Number(safePrezzo.toFixed(2)) });
   doctor.prestazioni.sort((a,b)=>a.name.localeCompare(b.name, "it"));
   return true;
 }
@@ -97,6 +113,7 @@ function applyRegisteredPercentForPopup() {
   if (!cfg) return false;
   document.getElementById("popupPercMedico").value = cfg.percMedico;
   document.getElementById("popupPercStruttura").value = Number((100 - cfg.percMedico).toFixed(2));
+  if (!editingEntryId && cfg.prezzo) document.getElementById("popupImporto").value = cfg.prezzo;
   updatePopupPreview();
   return true;
 }
@@ -128,8 +145,10 @@ function sanitizePrestazioneConfig(raw) {
   const name = String(raw?.name || raw?.prestazione || "").trim();
   if (!name) return null;
   const percMedico = Number(raw?.percMedico);
+  const prezzo = Number(raw?.prezzo || raw?.importo || 0);
   const safePerc = Number.isFinite(percMedico) ? Math.max(0, Math.min(100, percMedico)) : 60;
-  return { id: Number(raw?.id) || createId(), name, percMedico: Number(safePerc.toFixed(2)) };
+  const safePrezzo = Number.isFinite(prezzo) ? Math.max(0, prezzo) : 0;
+  return { id: Number(raw?.id) || createId(), name, percMedico: Number(safePerc.toFixed(2)), prezzo: Number(safePrezzo.toFixed(2)) };
 }
 
 function sanitizeDoctor(raw) {
@@ -162,6 +181,16 @@ function sanitizeEntry(raw) {
   };
 }
 
+function sanitizeSpesa(raw) {
+  const nome = String(raw?.nome || "").trim();
+  const categoria = String(raw?.categoria || "varie").trim().toLowerCase();
+  const importo = Number(raw?.importo || 0);
+  const data = normalizeDateISO(raw?.data, todayISO());
+  const note = String(raw?.note || "").trim();
+  if (!nome || !Number.isFinite(importo) || importo <= 0) return null;
+  return { id: Number(raw?.id) || createId(), nome, categoria, importo: Number(importo.toFixed(2)), data, note };
+}
+
 function normalizeInvoiceStates(raw) {
   const result = {};
   if (!raw || typeof raw !== "object") return result;
@@ -173,6 +202,7 @@ function loadData() {
   const storedDoctors = readJsonStorage(STORAGE_KEYS.doctors) ?? readJsonStorage(LEGACY_STORAGE_KEYS.doctors) ?? [];
   const storedEntries = readJsonStorage(STORAGE_KEYS.entries) ?? readJsonStorage(LEGACY_STORAGE_KEYS.entries) ?? [];
   const storedInvoiceStates = readJsonStorage(STORAGE_KEYS.invoiceStates) ?? readJsonStorage(LEGACY_STORAGE_KEYS.invoiceStates) ?? {};
+  const storedSpese = readJsonStorage(STORAGE_KEYS.spese) ?? readJsonStorage(LEGACY_STORAGE_KEYS.spese) ?? [];
   const doctorMap = new Map();
   doctors = Array.isArray(storedDoctors) ? storedDoctors.map(sanitizeDoctor).filter(Boolean).filter((doctor) => {
     const key = doctor.name.toLowerCase(); if (doctorMap.has(key)) return false; doctorMap.set(key, doctor.id); return true;
@@ -180,6 +210,7 @@ function loadData() {
   const validDoctorIds = new Set(doctors.map((doctor) => doctor.id));
   entries = Array.isArray(storedEntries) ? storedEntries.map(sanitizeEntry).filter((entry) => entry && validDoctorIds.has(entry.doctorId)).sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id) : [];
   invoiceStates = normalizeInvoiceStates(storedInvoiceStates);
+  spese = Array.isArray(storedSpese) ? storedSpese.map(sanitizeSpesa).filter(Boolean).sort((a,b) => b.data.localeCompare(a.data) || b.id - a.id) : [];
 }
 
 function saveUiState() {
@@ -190,7 +221,8 @@ function saveUiState() {
     fattureDateTo: document.getElementById("fattureDateTo")?.value || todayISO(),
     fattureStatusFilter: document.getElementById("fattureStatusFilter")?.value || "tutti",
     fattureTypeFilter: document.getElementById("fattureTypeFilter")?.value || "tutti",
-    calendarMonth: document.getElementById("calendarMonth")?.value || currentMonthISO()
+    calendarMonth: document.getElementById("calendarMonth")?.value || currentMonthISO(),
+    speseFilterType, speseFilterValue
   };
   localStorage.setItem(STORAGE_KEYS.uiState, JSON.stringify(state));
 }
@@ -201,6 +233,8 @@ function loadUiState() {
   reportFilterType = ["giorno", "mese", "anno"].includes(state.reportFilterType) ? state.reportFilterType : "giorno";
   homeFilterValue = homeFilterType === "giorno" ? normalizeDateISO(state.homeFilterValue, todayISO()) : homeFilterType === "mese" ? normalizeMonthISO(state.homeFilterValue, currentMonthISO()) : normalizeYearISO(state.homeFilterValue, currentYearISO());
   reportFilterValue = reportFilterType === "giorno" ? normalizeDateISO(state.reportFilterValue, todayISO()) : reportFilterType === "mese" ? normalizeMonthISO(state.reportFilterValue, currentMonthISO()) : normalizeYearISO(state.reportFilterValue, currentYearISO());
+  speseFilterType = ["giorno", "mese", "anno"].includes(state.speseFilterType) ? state.speseFilterType : "giorno";
+  speseFilterValue = speseFilterType === "giorno" ? normalizeDateISO(state.speseFilterValue, todayISO()) : speseFilterType === "mese" ? normalizeMonthISO(state.speseFilterValue, currentMonthISO()) : normalizeYearISO(state.speseFilterValue, currentYearISO());
   currentDoctorId = doctors.some((doctor) => doctor.id === state.currentDoctorId) ? state.currentDoctorId : null;
   currentPage = typeof state.currentPage === "string" ? state.currentPage : "homePage";
   document.getElementById("doctorDetailMonth").value = normalizeMonthISO(state.doctorDetailMonth, currentMonthISO());
@@ -215,6 +249,7 @@ function saveAll() {
   localStorage.setItem(STORAGE_KEYS.doctors, JSON.stringify(doctors));
   localStorage.setItem(STORAGE_KEYS.entries, JSON.stringify(entries));
   localStorage.setItem(STORAGE_KEYS.invoiceStates, JSON.stringify(invoiceStates));
+  localStorage.setItem(STORAGE_KEYS.spese, JSON.stringify(spese));
   saveUiState();
   setSaveStatus(`Salvato in locale · ${new Date().toLocaleTimeString("it-IT", { hour: "2-digit", minute: "2-digit" })}`);
 }
@@ -229,6 +264,7 @@ function go(pageId, options = {}) {
     if (pageId === "mediciPage") renderDoctorsPage();
     if (pageId === "doctorDetailPage") renderDoctorDetail();
     if (pageId === "prestazioniPage") renderPrestazioniPage();
+    if (pageId === "spesePage") renderSpesePage();
     if (pageId === "reportPage") renderReport();
     if (pageId === "fatturePage") renderInvoices();
     if (pageId === "calendarPage") renderCalendar();
@@ -356,7 +392,7 @@ function saveEntry() {
   if (!Number.isFinite(percMedico) || percMedico < 0 || percMedico > 100) return alert("Percentuale medico non valida");
   const safeImporto = Number(importo.toFixed(2)); const safePercMedico = Number(percMedico.toFixed(2));
   const quotaMedico = Number((safeImporto * safePercMedico / 100).toFixed(2)); const quotaStruttura = Number((safeImporto - quotaMedico).toFixed(2));
-  upsertDoctorPrestazione(doctorId, prestazione, safePercMedico);
+  upsertDoctorPrestazione(doctorId, prestazione, safePercMedico, safeImporto);
   const payload = { doctorId, prestazione, data, importo: safeImporto, percMedico: safePercMedico, quotaMedico, quotaStruttura, tipoVoce, pagamento, transaThaw: false };
   if (editingEntryId) {
     const entry = entries.find((item) => item.id === editingEntryId); if (!entry) return;
@@ -369,6 +405,7 @@ function saveEntry() {
 function deleteEntry(id) { if (!confirm("Eliminare questa prestazione?")) return; entries = entries.filter((entry) => entry.id !== id); saveAll(); renderAll(); }
 function setHomeFiltroTipo(type) { homeFilterType = type; if (type === "giorno") homeFilterValue = todayISO(); if (type === "mese") homeFilterValue = currentMonthISO(); if (type === "anno") homeFilterValue = currentYearISO(); setActiveTab("home", type); renderHomeFilterControl(); renderHome(); saveUiState(); }
 function setReportFiltroTipo(type) { reportFilterType = type; if (type === "giorno") reportFilterValue = todayISO(); if (type === "mese") reportFilterValue = currentMonthISO(); if (type === "anno") reportFilterValue = currentYearISO(); setActiveTab("report", type); renderReportFilterControl(); renderReport(); saveUiState(); }
+function setSpeseFiltroTipo(type) { speseFilterType = type; if (type === "giorno") speseFilterValue = todayISO(); if (type === "mese") speseFilterValue = currentMonthISO(); if (type === "anno") speseFilterValue = currentYearISO(); setActiveTab("spese", type); renderSpeseFilterControl(); renderSpesePage(); saveUiState(); }
 
 function renderHomeFilterControl() {
   const wrap = document.getElementById("homeFilterControlWrap");
@@ -393,6 +430,67 @@ function renderReportFilterControl() {
   document.getElementById("reportFilterYear")?.addEventListener("change", (event) => { reportFilterValue = normalizeYearISO(event.target.value, currentYearISO()); renderReport(); saveUiState(); });
 }
 function getEntriesByFilter(type, value) { return entries.filter((entry) => type === "giorno" ? entry.data === value : type === "mese" ? entry.data.startsWith(value) : entry.data.startsWith(String(value))); }
+
+function renderSpeseFilterControl() {
+  let html = "";
+  if (speseFilterType === "giorno") html += `<label for="speseFilterDay">Giorno selezionato</label><input id="speseFilterDay" type="date" max="${todayISO()}" value="${normalizeDateISO(speseFilterValue, todayISO())}" />`;
+  else if (speseFilterType === "mese") html += `<label for="speseFilterMonth">Mese selezionato</label><input id="speseFilterMonth" type="month" max="${currentMonthISO()}" value="${normalizeMonthISO(speseFilterValue, currentMonthISO())}" />`;
+  else html += `<label for="speseFilterYear">Anno selezionato</label><input id="speseFilterYear" type="number" min="2020" max="${currentYearISO()}" value="${normalizeYearISO(speseFilterValue, currentYearISO())}" />`;
+  document.getElementById("speseFilterControlWrap").innerHTML = html;
+  document.getElementById("speseFilterDay")?.addEventListener("change", (event) => { speseFilterValue = normalizeDateISO(event.target.value, todayISO()); renderSpesePage(); saveUiState(); });
+  document.getElementById("speseFilterMonth")?.addEventListener("change", (event) => { speseFilterValue = normalizeMonthISO(event.target.value, currentMonthISO()); renderSpesePage(); saveUiState(); });
+  document.getElementById("speseFilterYear")?.addEventListener("change", (event) => { speseFilterValue = normalizeYearISO(event.target.value, currentYearISO()); renderSpesePage(); saveUiState(); });
+}
+
+function getSpeseByFilter(type, value) {
+  if (type === "giorno") return spese.filter((item) => item.data === value);
+  if (type === "mese") return spese.filter((item) => item.data.startsWith(value));
+  return spese.filter((item) => item.data.startsWith(String(value)));
+}
+
+function buildSpeseCategoryMap(list) {
+  const map = {};
+  list.forEach((item) => { map[item.categoria] = (map[item.categoria] || 0) + item.importo; });
+  return Object.entries(map).sort((a,b) => b[1] - a[1]).map(([name, value], idx) => ({ name, value, color: PIE_COLORS[idx % PIE_COLORS.length] }));
+}
+
+function renderSpesePage() {
+  const list = getSpeseByFilter(speseFilterType, speseFilterValue);
+  const total = list.reduce((sum, item) => sum + item.importo, 0);
+  const todayTotal = spese.filter((item) => item.data === todayISO()).reduce((sum, item) => sum + item.importo, 0);
+  const monthTotal = spese.filter((item) => item.data.startsWith(currentMonthISO())).reduce((sum, item) => sum + item.importo, 0);
+  const yearTotal = spese.filter((item) => item.data.startsWith(currentYearISO())).reduce((sum, item) => sum + item.importo, 0);
+  document.getElementById("spesePeriodoLabel").textContent = `${speseFilterType[0].toUpperCase() + speseFilterType.slice(1)} selezionato: ${periodLabel(speseFilterType, speseFilterValue)}`;
+  document.getElementById("speseCards").innerHTML = `
+    <div class="card report-card"><div class="report-card-title">Uscite periodo</div><div class="report-card-value">${currency(total)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Oggi</div><div class="report-card-value">${currency(todayTotal)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Mese</div><div class="report-card-value">${currency(monthTotal)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Anno</div><div class="report-card-value">${currency(yearTotal)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Movimenti</div><div class="report-card-value">${list.length}</div></div>
+  `;
+  const pieItems = buildSpeseCategoryMap(list);
+  const legend = pieItems.map((item) => `<div class="legend-row"><div class="legend-left"><span class="legend-dot" style="background:${item.color}"></span><span class="legend-name">${escapeHtml(item.name)}</span></div><span class="legend-val">${currency(item.value)}</span></div>`).join("");
+  document.getElementById("spesePieWrap").innerHTML = pieItems.length ? `<div class="pie-card"><div class="pie-layout">${buildPieSVG(pieItems)}<div class="pie-legend">${legend}</div></div></div>` : `<div class="medico-card">Nessuna uscita nel periodo selezionato.</div>`;
+  const wrap = document.getElementById("speseList");
+  wrap.innerHTML = list.map((item) => `
+    <div class="medico-card">
+      <div class="spesa-card-line">
+        <div class="spesa-card-main">
+          <div class="spesa-card-name">${escapeHtml(item.nome)}</div>
+          <div class="spesa-card-meta">${formatDateLabel(item.data)}${item.note ? ` · ${escapeHtml(item.note)}` : ""}</div>
+          <div class="spesa-chip">${escapeHtml(item.categoria)}</div>
+        </div>
+        <div class="spesa-card-right">${currency(item.importo)}</div>
+      </div>
+      <div class="card-actions" style="margin-top:12px;">
+        <button class="icon-btn" type="button" data-edit-spesa="${item.id}">✏️</button>
+        <button class="icon-btn" type="button" data-delete-spesa="${item.id}">🗑️</button>
+      </div>
+    </div>`).join("") || `<div class="medico-card">Nessuna uscita nel periodo selezionato.</div>`;
+  wrap.querySelectorAll("[data-edit-spesa]").forEach((btn) => btn.addEventListener("click", () => openSpesaPopup(Number(btn.dataset.editSpesa))));
+  wrap.querySelectorAll("[data-delete-spesa]").forEach((btn) => btn.addEventListener("click", () => deleteSpesa(Number(btn.dataset.deleteSpesa))));
+}
+
 function buildStatsMap(list) {
   const map = {};
   list.forEach((entry) => {
@@ -488,7 +586,7 @@ function renderPrestazioniPage() {
       <div class="prestazione-row-top">
         <div>
           <div class="prestazione-row-name">${escapeHtml(item.name)}</div>
-          <div class="prestazione-row-sub">% medico automatica: ${item.percMedico}%</div>
+          <div class="prestazione-row-sub"><span>% medico automatica: ${item.percMedico}%</span><span>Importo: ${item.prezzo ? currency(item.prezzo) : "€0.00"}</span></div>
         </div>
         <div class="simple-medico-actions">
           <button class="icon-btn" type="button" data-edit-prestazione="${escapeHtml(item.name)}">✏️</button>
@@ -500,38 +598,58 @@ function renderPrestazioniPage() {
   document.querySelectorAll("[data-delete-prestazione]").forEach((btn) => btn.addEventListener("click", () => removePrestazioneConfig(doctorId, btn.dataset.deletePrestazione)));
 }
 
-function addPrestazioneConfig() {
+let editingPrestazioneName = null;
+
+function populatePrestazionePopupDoctor() {
+  const select = document.getElementById("prestazionePopupDoctor");
+  if (!select) return;
+  select.innerHTML = doctors.map((doctor) => `<option value="${doctor.id}">${escapeHtml(doctor.name)}</option>`).join("");
+  select.value = currentDoctorId || doctors[0]?.id || "";
+}
+
+function openPrestazionePopup(currentName = null) {
   if (!doctors.length) return alert("Inserisci prima almeno un medico");
-  const doctorId = Number(document.getElementById("prestazioniDoctorFilter")?.value || currentDoctorId || doctors[0].id);
-  const name = prompt("Nome prestazione");
-  if (!name) return;
-  const cleanName = name.trim();
-  if (!cleanName) return;
-  const suggested = findDoctorPrestazione(doctorId, cleanName)?.percMedico ?? 60;
-  const perc = prompt(`Percentuale medico per "${cleanName}"`, String(suggested));
-  if (perc === null) return;
-  const safePerc = Number(perc);
-  if (!Number.isFinite(safePerc) || safePerc < 0 || safePerc > 100) return alert("Inserisci una percentuale valida tra 0 e 100");
-  upsertDoctorPrestazione(doctorId, cleanName, safePerc);
+  editingPrestazioneName = currentName;
+  populatePrestazionePopupDoctor();
+  const doctorId = currentDoctorId || Number(document.getElementById("prestazioniDoctorFilter")?.value || doctors[0]?.id || 0);
+  document.getElementById("prestazionePopupDoctor").value = doctorId || doctors[0]?.id || "";
+  const current = currentName ? findDoctorPrestazione(Number(document.getElementById("prestazionePopupDoctor").value || 0), currentName) : null;
+  document.getElementById("prestazionePopupTitle").textContent = current ? "Modifica Prestazione" : "Nuova Prestazione";
+  document.getElementById("prestazionePopupName").value = current?.name || "";
+  document.getElementById("prestazionePopupPerc").value = current?.percMedico ?? 60;
+  document.getElementById("prestazionePopupPrice").value = current?.prezzo ?? "";
+  document.getElementById("prestazionePopup").classList.remove("hidden");
+  setTimeout(() => document.getElementById("prestazionePopupName").focus(), 40);
+}
+
+function closePrestazionePopup() {
+  document.getElementById("prestazionePopup").classList.add("hidden");
+  editingPrestazioneName = null;
+}
+
+function savePrestazionePopup() {
+  const doctorId = Number(document.getElementById("prestazionePopupDoctor").value || 0);
+  const cleanName = String(document.getElementById("prestazionePopupName").value || "").trim();
+  const safePerc = Math.max(0, Math.min(100, Number(document.getElementById("prestazionePopupPerc").value || 0)));
+  const safePrezzo = Math.max(0, Number(document.getElementById("prestazionePopupPrice").value || 0));
+  if (!doctorId || !cleanName) return alert("Inserisci nome prestazione");
+  if (!Number.isFinite(safePerc)) return alert("Percentuale non valida");
+  if (!Number.isFinite(safePrezzo)) return alert("Importo non valido");
+  if (editingPrestazioneName) deleteDoctorPrestazione(doctorId, editingPrestazioneName);
+  upsertDoctorPrestazione(doctorId, cleanName, safePerc, safePrezzo);
+  currentDoctorId = doctorId;
   saveAll();
+  closePrestazionePopup();
   renderPrestazioniPage();
 }
 
+function addPrestazioneConfig() {
+  openPrestazionePopup();
+}
+
 function editPrestazioneConfig(doctorId, oldName) {
-  const current = findDoctorPrestazione(doctorId, oldName);
-  if (!current) return;
-  const name = prompt("Modifica nome prestazione", current.name);
-  if (!name) return;
-  const cleanName = name.trim();
-  if (!cleanName) return;
-  const perc = prompt(`Percentuale medico per "${cleanName}"`, String(current.percMedico));
-  if (perc === null) return;
-  const safePerc = Number(perc);
-  if (!Number.isFinite(safePerc) || safePerc < 0 || safePerc > 100) return alert("Inserisci una percentuale valida tra 0 e 100");
-  deleteDoctorPrestazione(doctorId, oldName);
-  upsertDoctorPrestazione(doctorId, cleanName, safePerc);
-  saveAll();
-  renderPrestazioniPage();
+  currentDoctorId = doctorId;
+  openPrestazionePopup(oldName);
 }
 
 function removePrestazioneConfig(doctorId, name) {
@@ -539,6 +657,64 @@ function removePrestazioneConfig(doctorId, name) {
   deleteDoctorPrestazione(doctorId, name);
   saveAll();
   renderPrestazioniPage();
+}
+
+
+let editingSpesaId = null;
+let selectedSpesaCategory = "varie";
+
+function renderSpesaCategoryChips() {
+  const wrap = document.getElementById("spesaCategoryChips");
+  if (!wrap) return;
+  wrap.innerHTML = SPESE_CATEGORIES.map((item) => `<button class="chip-btn ${selectedSpesaCategory === item.key ? "selected" : ""}" type="button" data-spesa-cat="${item.key}">${item.label}</button>`).join("");
+  wrap.querySelectorAll("[data-spesa-cat]").forEach((btn) => btn.addEventListener("click", () => { selectedSpesaCategory = btn.dataset.spesaCat; renderSpesaCategoryChips(); }));
+}
+
+function openSpesaPopup(id = null) {
+  editingSpesaId = id;
+  const current = id ? spese.find((item) => item.id === id) : null;
+  document.getElementById("spesaPopupTitle").textContent = current ? "Modifica Uscita" : "Nuova Uscita";
+  document.getElementById("spesaPopupName").value = current?.nome || "";
+  document.getElementById("spesaPopupDate").value = current?.data || todayISO();
+  document.getElementById("spesaPopupAmount").value = current?.importo || "";
+  document.getElementById("spesaPopupNote").value = current?.note || "";
+  selectedSpesaCategory = current?.categoria || "varie";
+  renderSpesaCategoryChips();
+  document.getElementById("spesaPopup").classList.remove("hidden");
+  setTimeout(() => document.getElementById("spesaPopupName").focus(), 40);
+}
+
+function closeSpesaPopup() {
+  document.getElementById("spesaPopup").classList.add("hidden");
+  editingSpesaId = null;
+  selectedSpesaCategory = "varie";
+}
+
+function saveSpesaPopup() {
+  const item = sanitizeSpesa({
+    id: editingSpesaId || createId(),
+    nome: document.getElementById("spesaPopupName").value,
+    categoria: selectedSpesaCategory,
+    importo: document.getElementById("spesaPopupAmount").value,
+    data: document.getElementById("spesaPopupDate").value,
+    note: document.getElementById("spesaPopupNote").value
+  });
+  if (!item) return alert("Inserisci almeno nome e importo validi");
+  if (editingSpesaId) spese = spese.map((row) => row.id === editingSpesaId ? item : row);
+  else spese.unshift(item);
+  spese.sort((a,b) => b.data.localeCompare(a.data) || b.id - a.id);
+  saveAll();
+  closeSpesaPopup();
+  renderSpesePage();
+  renderReport();
+}
+
+function deleteSpesa(id) {
+  if (!confirm("Eliminare questa uscita?")) return;
+  spese = spese.filter((item) => item.id !== id);
+  saveAll();
+  renderSpesePage();
+  renderReport();
 }
 
 function printDoctorDetail() { window.print(); }
@@ -554,6 +730,8 @@ function renderReport() {
   const list = getEntriesByFilter(reportFilterType, reportFilterValue);
   const stats = buildStatsMap(list); const workedDoctors = doctors.filter((doctor) => stats[doctor.id]);
   const total = list.reduce((s, e) => s + e.importo, 0), structure = list.reduce((s, e) => s + e.quotaStruttura, 0), doctor = list.reduce((s, e) => s + e.quotaMedico, 0);
+  const totalSpese = getSpeseByFilter(reportFilterType, reportFilterValue).reduce((s, item) => s + item.importo, 0);
+  const utileNetto = structure - totalSpese;
   const totalPOS = list.filter((e) => e.pagamento === "pos").reduce((s, e) => s + e.importo, 0);
   const totalContanti = list.filter((e) => e.pagamento === "contanti").reduce((s, e) => s + e.importo, 0);
   const totalStandard = list.filter((e) => e.tipoVoce === "standard").reduce((s, e) => s + e.importo, 0);
@@ -566,6 +744,8 @@ function renderReport() {
     <div class="card report-card"><div class="report-card-title">Guadagno totale</div><div class="report-card-value">${currency(total)}</div></div>
     <div class="card report-card"><div class="report-card-title">Totale struttura</div><div class="report-card-value">${currency(structure)}</div></div>
     <div class="card report-card"><div class="report-card-title">Totale medici</div><div class="report-card-value">${currency(doctor)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Spese</div><div class="report-card-value">${currency(totalSpese)}</div></div>
+    <div class="card report-card"><div class="report-card-title">Utile netto</div><div class="report-card-value">${currency(utileNetto)}</div></div>
     <div class="card report-card"><div class="report-card-title">Prestazioni totali</div><div class="report-card-value">${list.length}</div></div>
     <div class="card report-card"><div class="report-card-title">POS</div><div class="report-card-value">${currency(totalPOS)}</div></div>
     <div class="card report-card"><div class="report-card-title">Contanti</div><div class="report-card-value">${currency(totalContanti)}</div></div>
@@ -625,10 +805,10 @@ function renderCalendar() {
   saveUiState();
 }
 
-function renderAll() { renderTopMonthlyCards(); renderHome(); renderDoctorsPage(); renderPrestazioniPage(); renderReport(); renderInvoices(); if (currentDoctorId) renderDoctorDetail(); if (document.getElementById("calendarPage").classList.contains("active")) renderCalendar(); }
+function renderAll() { renderTopMonthlyCards(); renderHome(); renderDoctorsPage(); renderPrestazioniPage(); renderSpesePage(); renderReport(); renderInvoices(); if (currentDoctorId) renderDoctorDetail(); if (document.getElementById("calendarPage").classList.contains("active")) renderCalendar(); }
 
 function exportData() {
-  const data = { schemaVersion: 4, doctors, entries, invoiceStates, exportedAt: new Date().toISOString() };
+  const data = { schemaVersion: 5, doctors, entries, invoiceStates, spese, exportedAt: new Date().toISOString() };
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" }); const link = document.createElement("a"); link.href = URL.createObjectURL(blob); link.download = `backup-anvamed-${todayISO()}.json`; link.click(); URL.revokeObjectURL(link.href); setSaveStatus("Backup esportato");
 }
 function importDataFromFile(file) {
@@ -640,7 +820,8 @@ function importDataFromFile(file) {
       const importedDoctors = Array.isArray(data.doctors) ? data.doctors.map(sanitizeDoctor).filter(Boolean) : [];
       const doctorIds = new Set(importedDoctors.map((doctor) => doctor.id));
       const importedEntries = Array.isArray(data.entries) ? data.entries.map(sanitizeEntry).filter((entry) => entry && doctorIds.has(entry.doctorId)) : [];
-      doctors = importedDoctors.sort((a, b) => a.name.localeCompare(b.name, "it")); entries = importedEntries.sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id); invoiceStates = normalizeInvoiceStates(data.invoiceStates);
+      const importedSpese = Array.isArray(data.spese) ? data.spese.map(sanitizeSpesa).filter(Boolean) : [];
+      doctors = importedDoctors.sort((a, b) => a.name.localeCompare(b.name, "it")); entries = importedEntries.sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id); invoiceStates = normalizeInvoiceStates(data.invoiceStates); spese = importedSpese.sort((a,b) => b.data.localeCompare(a.data) || b.id - a.id);
       if (currentDoctorId && !doctors.some((doctor) => doctor.id === currentDoctorId)) currentDoctorId = null;
       saveAll(); renderAll(); document.getElementById("importFile").value = ""; alert("Backup importato correttamente");
     } catch (error) { console.error(error); alert("Errore durante l'importazione del backup"); setSaveStatus("Errore di importazione", true); }
@@ -650,6 +831,7 @@ function importDataFromFile(file) {
 
 function setupEventListeners() {
   document.getElementById("newRegistrationBtn").addEventListener("click", () => openEntryPopup());
+  document.getElementById("newExpenseBtn").addEventListener("click", () => openSpesaPopup());
   document.getElementById("openCalendarBtn").addEventListener("click", () => go("calendarPage"));
   document.getElementById("addDoctorBtn").addEventListener("click", addDoctor);
   document.getElementById("backToDoctorsBtn").addEventListener("click", () => go("mediciPage"));
@@ -657,6 +839,7 @@ function setupEventListeners() {
   document.getElementById("quickAddDoctorBtn").addEventListener("click", () => { if (!currentDoctorId) return; const month = document.getElementById("doctorDetailMonth").value || currentMonthISO(); openEntryPopup(null, currentDoctorId, month === currentMonthISO() ? todayISO() : `${month}-01`); });
   document.getElementById("printDoctorBtn").addEventListener("click", printDoctorDetail);
   document.getElementById("addPrestazioneBtn").addEventListener("click", addPrestazioneConfig);
+  document.getElementById("addSpesaBtn").addEventListener("click", () => openSpesaPopup());
   document.getElementById("prestazioniDoctorFilter").addEventListener("change", (event) => { currentDoctorId = Number(event.target.value) || currentDoctorId; renderPrestazioniPage(); saveUiState(); });
   document.getElementById("printReportBtn").addEventListener("click", printReport);
   document.getElementById("printInvoicesBtn").addEventListener("click", printInvoices);
@@ -668,6 +851,9 @@ function setupEventListeners() {
   document.getElementById("reportTabGiorno").addEventListener("click", () => setReportFiltroTipo("giorno"));
   document.getElementById("reportTabMese").addEventListener("click", () => setReportFiltroTipo("mese"));
   document.getElementById("reportTabAnno").addEventListener("click", () => setReportFiltroTipo("anno"));
+  document.getElementById("speseTabGiorno").addEventListener("click", () => setSpeseFiltroTipo("giorno"));
+  document.getElementById("speseTabMese").addEventListener("click", () => setSpeseFiltroTipo("mese"));
+  document.getElementById("speseTabAnno").addEventListener("click", () => setSpeseFiltroTipo("anno"));
   document.querySelectorAll(".menu-btn").forEach((btn) => btn.addEventListener("click", () => go(btn.dataset.page)));
   document.getElementById("closePopupBtn").addEventListener("click", closeEntryPopup);
   document.getElementById("cancelPopupBtn").addEventListener("click", closeEntryPopup);
@@ -698,6 +884,14 @@ function setupEventListeners() {
   document.getElementById("pinUnlockBtn").addEventListener("click", unlockWithPin);
   document.getElementById("pinInput").addEventListener("keydown", (event) => { if (event.key === "Enter") unlockWithPin(); });
   document.getElementById("popup").addEventListener("click", (event) => { if (event.target.id === "popup") closeEntryPopup(); });
+  document.getElementById("prestazionePopup").addEventListener("click", (event) => { if (event.target.id === "prestazionePopup") closePrestazionePopup(); });
+  document.getElementById("spesaPopup").addEventListener("click", (event) => { if (event.target.id === "spesaPopup") closeSpesaPopup(); });
+  document.getElementById("closePrestazionePopupBtn").addEventListener("click", closePrestazionePopup);
+  document.getElementById("cancelPrestazionePopupBtn").addEventListener("click", closePrestazionePopup);
+  document.getElementById("savePrestazionePopupBtn").addEventListener("click", savePrestazionePopup);
+  document.getElementById("closeSpesaPopupBtn").addEventListener("click", closeSpesaPopup);
+  document.getElementById("cancelSpesaPopupBtn").addEventListener("click", closeSpesaPopup);
+  document.getElementById("saveSpesaPopupBtn").addEventListener("click", saveSpesaPopup);
   document.addEventListener("keydown", (event) => { if (event.key === "Escape" && !document.getElementById("popup").classList.contains("hidden")) closeEntryPopup(); });
 }
 
@@ -749,9 +943,9 @@ function boot() {
   document.getElementById("fattureDateFrom").max = todayISO();
   document.getElementById("fattureDateTo").max = todayISO();
   document.getElementById("calendarMonth").value = currentMonthISO();
-  setupEventListeners(); loadUiState(); renderHomeFilterControl(); renderReportFilterControl(); renderAll();
-  const allowedPages = ["homePage", "mediciPage", "doctorDetailPage", "prestazioniPage", "reportPage", "fatturePage", "calendarPage"]; if (!allowedPages.includes(currentPage)) currentPage = "homePage"; if (currentPage === "doctorDetailPage" && !currentDoctorId) currentPage = "mediciPage";
-  setActiveTab("home", homeFilterType); setActiveTab("report", reportFilterType); go(currentPage, { skipRender: false }); setSaveStatus("Archivio locale premium attivo");
+  setupEventListeners(); loadUiState(); renderHomeFilterControl(); renderReportFilterControl(); renderSpeseFilterControl(); renderAll();
+  const allowedPages = ["homePage", "mediciPage", "doctorDetailPage", "prestazioniPage", "spesePage", "reportPage", "fatturePage", "calendarPage"]; if (!allowedPages.includes(currentPage)) currentPage = "homePage"; if (currentPage === "doctorDetailPage" && !currentDoctorId) currentPage = "mediciPage";
+  setActiveTab("home", homeFilterType); setActiveTab("report", reportFilterType); setActiveTab("spese", speseFilterType); go(currentPage, { skipRender: false }); setSaveStatus("Archivio locale premium attivo");
   lockApp();
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) { lastHiddenAt = Date.now(); return; }

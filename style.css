@@ -1519,3 +1519,39 @@ body{
     min-height:-webkit-fill-available;
   }
 }
+
+
+.secondary-main-btn{
+  background:linear-gradient(90deg,#f0c74f,#eea93d);
+  box-shadow:0 14px 30px rgba(238,169,61,.20);
+}
+.secondary-main-btn .btn-plus{ color:#c68412; }
+.compact-popup{ max-width:460px; }
+.popup-extra-grid.three{
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+  margin-bottom:10px;
+}
+.chips-wrap .chip-btn.selected{
+  background:linear-gradient(90deg,var(--green),var(--blue));
+  color:#fff;
+}
+.spesa-card-line{ display:flex; align-items:flex-start; justify-content:space-between; gap:12px; }
+.spesa-card-main{ min-width:0; flex:1; }
+.spesa-card-name{ font-weight:900; font-size:1rem; }
+.spesa-card-meta{ color:var(--muted); font-size:.82rem; margin-top:4px; }
+.spesa-card-right{ text-align:right; font-weight:900; }
+.spesa-chip{
+  display:inline-block;
+  margin-top:8px;
+  padding:5px 10px;
+  border-radius:999px;
+  background:#eff4f8;
+  color:#4f6070;
+  font-size:.78rem;
+  font-weight:800;
+}
+@media (max-width:390px){
+  .menu{grid-template-columns:repeat(6,1fr);}
+  .menu-label{font-size:.62rem;}
+}
