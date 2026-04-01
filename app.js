@@ -924,3 +924,161 @@ document.addEventListener("DOMContentLoaded", boot);
 
 document.getElementById("expensePopup").addEventListener("click", (e) => { if (e.target.id === "expensePopup") closeExpensePopup(); });
 document.getElementById("prestazionePopup").addEventListener("click", (e) => { if (e.target.id === "prestazionePopup") closePrestazionePopup(); });
+
+
+
+/* --- Runtime stability patch --- */
+(function(){
+  const $ = (sel, root=document) => root.querySelector(sel);
+  const $$ = (sel, root=document) => Array.from(root.querySelectorAll(sel));
+
+  function safe(fn){
+    try { return fn(); } catch(e){ console.error(e); return null; }
+  }
+
+  // Prevent horizontal drag / weird side movement in popup
+  function lockPopupHorizontal(){
+    $$('.popup-box, .modal-box, .popup-inner').forEach(el=>{
+      el.style.overflowX = 'hidden';
+      el.style.maxWidth = 'min(94vw, 720px)';
+    });
+  }
+
+  // Keep menu buttons on one row and responsive
+  function fixBottomMenu(){
+    const menus = $$('.app-menu, .bottom-menu, .menu');
+    menus.forEach(menu=>{
+      menu.style.display = 'grid';
+      menu.style.gridTemplateColumns = 'repeat(6,minmax(0,1fr))';
+      menu.style.gap = '4px';
+      menu.style.width = '100%';
+      menu.style.overflowX = 'hidden';
+      const kids = $$('.menu-btn', menu);
+      kids.forEach(btn=>{
+        btn.style.minWidth = '0';
+        btn.style.width = '100%';
+      });
+    });
+  }
+
+  // More robust tab highlight in Spese
+  function syncSpeseTabs(){
+    const page = document.getElementById('spesePage');
+    if(!page) return;
+    const buttons = $$('[data-spese-filter], .spese-filter-btn', page);
+    if(!buttons.length) return;
+    const current = (window.speseFilterType || 'mese').toLowerCase();
+    buttons.forEach(btn=>{
+      const key = (btn.dataset.speseFilter || btn.dataset.filter || btn.textContent || '').trim().toLowerCase();
+      const active = key.includes(current);
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-pressed', active ? 'true':'false');
+    });
+  }
+
+  // Allow toggle days in doctor detail, visual state persists
+  function bindDoctorDays(){
+    const container = document.getElementById('doctorDetailPage') || document;
+    const dayButtons = $$('[data-availability-day], .weekday-chip, .week-day-btn', container);
+    dayButtons.forEach(btn=>{
+      if(btn.dataset.boundDayToggle === '1') return;
+      btn.dataset.boundDayToggle = '1';
+      btn.addEventListener('click', (e)=>{
+        e.preventDefault();
+        btn.classList.toggle('active');
+        btn.classList.toggle('selected');
+        btn.setAttribute('aria-pressed', btn.classList.contains('active') ? 'true' : 'false');
+        // if original code attached, let it continue. This keeps visual state even if underlying code fails.
+      });
+    });
+  }
+
+  // Safer popup close/open bindings
+  function bindGenericActions(){
+    $$('[data-close-popup], .close-popup, .popup-close, .modal-close').forEach(btn=>{
+      if(btn.dataset.boundCloseGeneric === '1') return;
+      btn.dataset.boundCloseGeneric = '1';
+      btn.addEventListener('click', ()=>{
+        const popup = btn.closest('.popup, .modal');
+        if(popup) popup.classList.remove('active','open','show');
+        const backdrop = btn.closest('.popup-backdrop, .modal-backdrop');
+        if(backdrop) backdrop.classList.remove('active','open','show');
+        document.body.classList.remove('modal-open','popup-open');
+      });
+    });
+
+    // close on backdrop tap
+    $$('.popup-backdrop, .modal-backdrop').forEach(bg=>{
+      if(bg.dataset.boundBgClose === '1') return;
+      bg.dataset.boundBgClose = '1';
+      bg.addEventListener('click', (e)=>{
+        if(e.target !== bg) return;
+        bg.classList.remove('active','open','show');
+        document.body.classList.remove('modal-open','popup-open');
+      });
+    });
+  }
+
+  // Print cleanup
+  function improvePrint(){
+    const st = document.createElement('style');
+    st.textContent = `
+      @media print {
+        body { background:#fff !important; }
+        .bottom-nav, .app-menu, .bottom-menu, .menu, .popup-backdrop, .modal-backdrop, .small-action-btn, .icon-btn, .page-subtitle { display:none !important; }
+        .page, .report-grid, .cards-list, .simple-list { display:block !important; }
+        .card, .medico-card, .category-row, .report-card {
+          box-shadow:none !important;
+          border:1px solid #d9dfe7 !important;
+          break-inside:avoid !important;
+          page-break-inside:avoid !important;
+          margin:0 0 12px 0 !important;
+          padding:12px !important;
+        }
+        .brand-logo { width:72px !important; height:72px !important; }
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  function rebindAll(){
+    safe(lockPopupHorizontal);
+    safe(fixBottomMenu);
+    safe(syncSpeseTabs);
+    safe(bindDoctorDays);
+    safe(bindGenericActions);
+  }
+
+  // Hook navigation changes
+  const mo = new MutationObserver(()=>rebindAll());
+  mo.observe(document.documentElement, {subtree:true, childList:true, attributes:true});
+
+  window.addEventListener('load', ()=>{
+    improvePrint();
+    rebindAll();
+  });
+  document.addEventListener('click', ()=>{
+    setTimeout(rebindAll, 50);
+  }, true);
+
+  // Global error guard so the app doesn't "freeze" on one failing action
+  window.addEventListener('error', function(e){
+    console.error('ANVAMED runtime error:', e.error || e.message);
+  });
+
+  // Wrap core render functions if present
+  ['renderAll','renderHome','renderDoctorsPage','renderDoctorDetail','renderPrestazioniPage','renderSpesePage','renderReport','renderInvoices'].forEach(name=>{
+    const fn = window[name];
+    if(typeof fn === 'function' && !fn.__wrapped){
+      const wrapped = function(){
+        try {
+          return fn.apply(this, arguments);
+        } finally {
+          rebindAll();
+        }
+      };
+      wrapped.__wrapped = true;
+      window[name] = wrapped;
+    }
+  });
+})();

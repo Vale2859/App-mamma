@@ -1558,3 +1558,88 @@ html,body{overflow-x:hidden;}
   .brand-subtitle{font-size:1rem;}
   .save-status{color:#7b8794 !important;}
 }
+
+
+/* --- Stability & mobile fixes --- */
+.bottom-nav,
+.menu,
+.navbar-bottom,
+.mobile-nav{
+  overflow-x:hidden !important;
+}
+
+.app-menu,
+.bottom-menu{
+  display:grid !important;
+  grid-template-columns:repeat(6,minmax(0,1fr)) !important;
+  gap:4px !important;
+  width:100% !important;
+}
+
+.menu-btn,
+.bottom-menu .menu-btn,
+.app-menu .menu-btn{
+  min-width:0 !important;
+  width:100% !important;
+}
+
+.menu-icon{
+  display:block !important;
+  font-size:1.05rem !important;
+  line-height:1 !important;
+}
+
+.menu-label{
+  display:block !important;
+  font-size:.60rem !important;
+  line-height:1.05 !important;
+  white-space:nowrap !important;
+  overflow:hidden !important;
+  text-overflow:ellipsis !important;
+}
+
+@media (max-width: 430px){
+  .brand-logo{
+    width:132px !important;
+    height:132px !important;
+    padding:0 !important;
+    border-radius:28px !important;
+  }
+  .brand-title{
+    font-size:3.45rem !important;
+    line-height:.96 !important;
+  }
+  .brand-subtitle{
+    font-size:1.2rem !important;
+    letter-spacing:.22em !important;
+  }
+  .app-menu,
+  .bottom-menu{
+    gap:2px !important;
+  }
+  .menu-icon{
+    font-size:1rem !important;
+  }
+  .menu-label{
+    font-size:.56rem !important;
+  }
+}
+
+/* popup only vertical scroll */
+.popup,
+.popup-backdrop,
+.modal,
+.modal-backdrop{
+  overflow-x:hidden !important;
+}
+.popup-box,
+.modal-box,
+.popup-inner{
+  overflow-x:hidden !important;
+  overscroll-behavior:contain !important;
+  -webkit-overflow-scrolling:touch !important;
+}
+
+html, body{
+  overflow-x:hidden !important;
+}
