@@ -762,7 +762,7 @@ function renderReport() {
   `;
 }
 
-function printReport() { window.print(); }
+
 function invoiceKey(doctorId, fromDate, toDate, type) { return `${doctorId}__${fromDate}__${toDate}__${type}`; }
 function getInvoiceFilters() {
   const fromDate = normalizeDateISO(document.getElementById("fattureDateFrom").value, monthStartISO(currentMonthISO()));
@@ -795,7 +795,7 @@ function renderInvoices() {
   wrap.querySelectorAll("[data-invoice-doctor]").forEach((btn) => btn.addEventListener("click", () => cycleInvoiceStatus(Number(btn.dataset.invoiceDoctor), fromDate, toDate, type)));
   saveUiState();
 }
-function printInvoices() { window.print(); }
+
 
 function daysInMonth(year, monthIndex) { return new Date(year, monthIndex + 1, 0).getDate(); }
 function renderCalendar() {
@@ -1038,3 +1038,183 @@ window.addEventListener("load", () => {
   window.addEventListener("load", bindDoctorDayToggle);
   document.addEventListener("click", function(){ setTimeout(bindDoctorDayToggle, 30); }, true);
 })();
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const homeImport = document.getElementById("importFileHome");
+  if (homeImport && !homeImport.dataset.boundImportHome) {
+    homeImport.dataset.boundImportHome = "1";
+    homeImport.addEventListener("change", (event) => {
+      if (typeof importDataFromFile === "function") {
+        importDataFromFile(event.target.files[0]);
+      }
+    });
+  }
+
+  document.querySelectorAll(".export-backup-btn").forEach((btn) => {
+    if (!btn.dataset.boundExportHome) {
+      btn.dataset.boundExportHome = "1";
+      btn.addEventListener("click", () => {
+        if (typeof exportData === "function") exportData();
+      });
+    }
+  });
+});
+
+
+
+/* --- Premium PDF / print for Report and Fatture --- */
+function exportCssBlock() {
+  return `
+    <style>
+      *{box-sizing:border-box}
+      body{margin:0;padding:24px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Arial,sans-serif;background:#f4f7fb;color:#102033}
+      .sheet{max-width:980px;margin:0 auto;background:#fff;border-radius:24px;padding:28px 28px 22px;box-shadow:0 10px 30px rgba(16,32,51,.08)}
+      .head{display:flex;align-items:center;gap:16px;margin-bottom:18px;padding-bottom:16px;border-bottom:1px solid #e7edf4}
+      .head img{width:72px;height:72px;border-radius:18px;object-fit:cover}
+      .titleWrap h1{margin:0;font-size:34px;line-height:1;color:#102033}
+      .titleWrap p{margin:6px 0 0;color:#6d7b8c;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+      .meta{margin-left:auto;text-align:right;color:#6d7b8c;font-size:13px}
+      .period{margin:10px 0 18px;font-size:18px;font-weight:800;color:#304255}
+      .grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:16px}
+      .card{background:#fff;border:1px solid #dde7f0;border-radius:18px;padding:16px 18px;break-inside:avoid;page-break-inside:avoid}
+      .cardTitle{font-size:13px;font-weight:800;color:#7b8998;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+      .cardValue{font-size:28px;font-weight:900;color:#102033}
+      .sectionTitle{margin:18px 0 12px;font-size:20px;font-weight:900;color:#102033}
+      .list{display:grid;gap:12px}
+      .row{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+      .row strong{font-size:19px}
+      .sub{color:#6d7b8c;font-size:13px;margin-top:4px}
+      .badge{display:inline-block;margin-top:8px;padding:6px 10px;border-radius:999px;background:#eef4fb;color:#2f4e72;font-size:12px;font-weight:800}
+      .amount{font-size:24px;font-weight:900;white-space:nowrap}
+      .footer{margin-top:18px;padding-top:14px;border-top:1px solid #e7edf4;color:#7b8998;font-size:12px;display:flex;justify-content:space-between}
+      .summary3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+      @page{size:A4;margin:12mm}
+      @media print{
+        body{background:#fff;padding:0}
+        .sheet{box-shadow:none;border-radius:0;padding:0}
+      }
+    </style>
+  `;
+}
+
+function openPremiumPrintWindow(title, bodyHtml) {
+  const win = window.open("", "_blank");
+  if (!win) { alert("Consenti le finestre popup per stampare."); return; }
+  const doc = win.document;
+  doc.open();
+  doc.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>${title}</title>${exportCssBlock()}</head><body>${bodyHtml}</body></html>`);
+  doc.close();
+  win.focus();
+  setTimeout(() => win.print(), 250);
+}
+
+function html2pdfExport(filename, bodyHtml) {
+  if (typeof html2pdf === "undefined") {
+    openPremiumPrintWindow(filename, bodyHtml);
+    return;
+  }
+  const wrap = document.createElement("div");
+  wrap.innerHTML = bodyHtml;
+  document.body.appendChild(wrap);
+  const sheet = wrap.querySelector(".sheet") || wrap;
+  const opt = {
+    margin: 0,
+    filename: filename,
+    image: { type: "jpeg", quality: 0.98 },
+    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#f4f7fb" },
+    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+    pagebreak: { mode: ["css","legacy"] }
+  };
+  html2pdf().set(opt).from(sheet).save().then(() => wrap.remove()).catch(() => { wrap.remove(); });
+}
+
+function getBrandLogoSrc() {
+  const img = document.querySelector(".brand-logo");
+  return img ? img.getAttribute("src") : "anvamed.jpg";
+}
+
+function buildReportExportHtml() {
+  if (typeof renderReport === "function") renderReport();
+  const period = (document.getElementById("reportPeriodoLabel")?.textContent || "Periodo selezionato").trim();
+  const cards = Array.from(document.querySelectorAll("#reportCards .report-card, #reportCards .card")).map(card => {
+    const title = (card.querySelector(".report-card-title, p, .card-title")?.textContent || "").trim();
+    const value = (card.querySelector(".report-card-value, h2, h3, strong")?.textContent || card.textContent || "").trim();
+    return `<div class="card"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
+  }).join("");
+
+  const pieLegend = (document.getElementById("reportPieWrap")?.innerHTML || "");
+  return `
+    <div class="sheet">
+      <div class="head">
+        <img src="${getBrandLogoSrc()}" alt="ANVAMED">
+        <div class="titleWrap"><h1>Report ANVAMED</h1><p>Manager</p></div>
+        <div class="meta"><div>${new Date().toLocaleDateString("it-IT")}</div><div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div></div>
+      </div>
+      <div class="period">${period}</div>
+      <div class="grid">${cards}</div>
+      ${pieLegend ? `<div class="sectionTitle">Riepilogo</div><div class="card">${pieLegend}</div>` : ""}
+      <div class="footer"><span>Documento generato da ANVAMED Manager</span><span>${location.origin || ""}</span></div>
+    </div>`;
+}
+
+function buildInvoicesExportHtml() {
+  if (typeof renderInvoices === "function") renderInvoices();
+  const period = (document.getElementById("fatturePeriodoLabel")?.textContent || "Fatture del periodo").trim();
+  const summary = Array.from(document.querySelectorAll("#fattureSummary .report-card, #fattureSummary .card")).map(card => {
+    const title = (card.querySelector(".report-card-title, p, .card-title")?.textContent || "").trim();
+    const value = (card.querySelector(".report-card-value, h2, h3, strong")?.textContent || card.textContent || "").trim();
+    return `<div class="card"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
+  }).join("");
+
+  const items = Array.from(document.querySelectorAll("#fattureList .fattura-card, #fattureList .card")).map(card => {
+    const title = (card.querySelector("h3, .fattura-name, .doctor-name, strong")?.textContent || "Medico").trim();
+    const amount = (card.querySelector(".fattura-total, .report-card-value, h2, h3, strong:last-child")?.textContent || "").trim();
+    const sub = (card.querySelector(".fattura-sub, .small-note, p, .sub")?.textContent || "").trim();
+    const status = (card.querySelector(".fattura-status-btn, .badge, .status")?.textContent || "").trim();
+    return `<div class="card"><div class="row"><div><strong>${title}</strong><div class="sub">${sub}</div>${status ? `<span class="badge">${status}</span>`:""}</div><div class="amount">${amount}</div></div></div>`;
+  }).join("");
+
+  return `
+    <div class="sheet">
+      <div class="head">
+        <img src="${getBrandLogoSrc()}" alt="ANVAMED">
+        <div class="titleWrap"><h1>Fatture ANVAMED</h1><p>Manager</p></div>
+        <div class="meta"><div>${new Date().toLocaleDateString("it-IT")}</div><div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div></div>
+      </div>
+      <div class="period">${period}</div>
+      <div class="summary3">${summary}</div>
+      <div class="sectionTitle">Dettaglio medici</div>
+      <div class="list">${items}</div>
+      <div class="footer"><span>Documento generato da ANVAMED Manager</span><span>${location.origin || ""}</span></div>
+    </div>`;
+}
+
+function printReport() { openPremiumPrintWindow("Report ANVAMED", buildReportExportHtml()); }
+function printInvoices() { openPremiumPrintWindow("Fatture ANVAMED", buildInvoicesExportHtml()); }
+function exportReportPdf() { html2pdfExport(`report-anvamed-${(new Date()).toISOString().slice(0,10)}.pdf`, buildReportExportHtml()); }
+function exportInvoicesPdf() { html2pdfExport(`fatture-anvamed-${(new Date()).toISOString().slice(0,10)}.pdf`, buildInvoicesExportHtml()); }
+
+
+document.addEventListener("DOMContentLoaded", () => {
+  const pdfReportBtn = document.getElementById("pdfReportBtn");
+  if (pdfReportBtn && !pdfReportBtn.dataset.boundPdf) {
+    pdfReportBtn.dataset.boundPdf = "1";
+    pdfReportBtn.addEventListener("click", exportReportPdf);
+  }
+  const pdfInvoicesBtn = document.getElementById("pdfInvoicesBtn");
+  if (pdfInvoicesBtn && !pdfInvoicesBtn.dataset.boundPdf) {
+    pdfInvoicesBtn.dataset.boundPdf = "1";
+    pdfInvoicesBtn.addEventListener("click", exportInvoicesPdf);
+  }
+  const printReportBtn = document.getElementById("printReportBtn");
+  if (printReportBtn && !printReportBtn.dataset.boundPrintPremium) {
+    printReportBtn.dataset.boundPrintPremium = "1";
+    printReportBtn.addEventListener("click", printReport);
+  }
+  const printInvoicesBtn = document.getElementById("printInvoicesBtn");
+  if (printInvoicesBtn && !printInvoicesBtn.dataset.boundPrintPremium) {
+    printInvoicesBtn.dataset.boundPrintPremium = "1";
+    printInvoicesBtn.addEventListener("click", printInvoices);
+  }
+});

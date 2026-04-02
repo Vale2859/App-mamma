@@ -1591,3 +1591,17 @@ body{
 .quick-tools .small-action-btn{
   min-height:42px;
 }
+
+
+/* export buttons */
+.export-actions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+}
+.secondary-btn{
+  background:#eef4fb !important;
+  color:#133252 !important;
+  border:1px solid #d7e4f2 !important;
+}

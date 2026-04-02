@@ -11,6 +11,7 @@
   <link rel="icon" href="anvamed.jpg" />
   <link rel="apple-touch-icon" href="anvamed.jpg" />
   <link rel="stylesheet" href="style.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -39,12 +40,13 @@
         </div>
 
 
+        
+
         <div class="quick-tools">
           <button class="small-action-btn export-backup-btn" type="button">💾 Backup</button>
           <label class="small-action-btn" for="importFileHome">📂 Importa</label>
           <input type="file" id="importFileHome" class="import-backup-input" accept="application/json" hidden>
         </div>
-
         <button class="main-btn" type="button" id="newRegistrationBtn">
           <span class="btn-plus">＋</span>
           <span class="btn-text-wrap">
@@ -63,11 +65,7 @@
 
         <div class="toolbar">
   
-        <div class="quick-tools">
-          <button class="small-action-btn export-backup-btn" type="button">💾 Backup</button>
-          <label class="small-action-btn" for="importFileSpese">📂 Importa</label>
-          <input type="file" id="importFileSpese" class="import-backup-input" accept="application/json" hidden>
-        </div>
+        
 
         <div class="period-tabs">
             <button id="homeTabGiorno" class="tab active" type="button">Giorno</button>
@@ -163,11 +161,7 @@
         </div>
 
 
-        <div class="quick-tools">
-          <button class="small-action-btn export-backup-btn" type="button">💾 Backup</button>
-          <label class="small-action-btn" for="importFilePrestazioni">📂 Importa</label>
-          <input type="file" id="importFilePrestazioni" class="import-backup-input" accept="application/json" hidden>
-        </div>
+        
 
         <div class="filter-control" style="margin-bottom:12px;">
           <label for="prestazioniDoctorFilter">Medico</label>
@@ -204,7 +198,7 @@
       <section id="reportPage" class="page">
         <div class="page-head">
           <h2>Report</h2>
-          <button class="small-action-btn" type="button" id="printReportBtn">🖨️ Stampa</button>
+          <div class="export-actions"><button class="small-action-btn secondary-btn" type="button" id="pdfReportBtn">📄 PDF</button><button class="small-action-btn" type="button" id="printReportBtn">🖨️ Stampa</button></div>
         </div>
 
         <div class="period-tabs">
@@ -225,7 +219,7 @@
       <section id="fatturePage" class="page">
         <div class="page-head">
           <h2>Fatture</h2>
-          <button class="small-action-btn" type="button" id="printInvoicesBtn">🖨️ Stampa</button>
+          <div class="export-actions"><button class="small-action-btn secondary-btn" type="button" id="pdfInvoicesBtn">📄 PDF</button><button class="small-action-btn" type="button" id="printInvoicesBtn">🖨️ Stampa</button></div>
         </div>
 
         <div class="fatture-filters">
