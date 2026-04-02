@@ -1568,3 +1568,26 @@ body{
 .header{padding-top:18px!important}
 @media (max-width:430px){.brand-title{font-size:3.55rem!important;line-height:.95}.brand-subtitle{font-size:1.22rem!important}.menu-label{font-size:.54rem!important}}
 @media print{.menu,.popup,.popup.hidden,.small-action-btn,.icon-btn,.main-btn,.calendar-open-btn{display:none!important}.header{padding:0 0 16px!important}.brand-logo{width:74px!important;height:74px!important;box-shadow:none!important}.page.active{display:block!important}.card,.medico-card,.report-card,.fattura-card,.pie-card,.prestazione-row,.simple-medico-row{break-inside:avoid;page-break-inside:avoid;box-shadow:none!important;border:1px solid #dfe5ec!important}}
+
+
+/* evidenza selezione disponibilità medico */
+.weekday-chip.active, .weekday-chip.selected,
+.week-day-btn.active, .week-day-btn.selected,
+.day-dot.active, .day-dot.selected,
+.day-pill.active, .day-pill.selected,
+[data-day].active, [data-day].selected,
+[data-availability-day].active, [data-availability-day].selected{
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.32), 0 0 0 3px rgba(37,99,235,.12) !important;
+}
+
+
+.quick-tools{
+  display:flex;
+  gap:10px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin:10px 0 14px;
+}
+.quick-tools .small-action-btn{
+  min-height:42px;
+}

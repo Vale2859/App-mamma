@@ -851,7 +851,9 @@ function setupEventListeners() {
   document.getElementById("printReportBtn").addEventListener("click", printReport);
   document.getElementById("printInvoicesBtn").addEventListener("click", printInvoices);
   document.getElementById("exportBackupBtn").addEventListener("click", exportData);
+  document.querySelectorAll(".export-backup-btn").forEach((btn) => btn.addEventListener("click", exportData));
   document.getElementById("importFile").addEventListener("change", (event) => importDataFromFile(event.target.files[0]));
+  document.querySelectorAll(".import-backup-input").forEach((input) => input.addEventListener("change", (event) => importDataFromFile(event.target.files[0])));
   document.getElementById("homeTabGiorno").addEventListener("click", () => setHomeFiltroTipo("giorno"));
   document.getElementById("homeTabMese").addEventListener("click", () => setHomeFiltroTipo("mese"));
   document.getElementById("homeTabAnno").addEventListener("click", () => setHomeFiltroTipo("anno"));
@@ -972,3 +974,67 @@ document.addEventListener("DOMContentLoaded", boot);
 window.addEventListener("load", () => {
   document.body.style.overflowX = "hidden";
 });
+
+
+
+/* --- Fix toggle disponibilità settimanale medici --- */
+(function(){
+  function persistDoctorDays(detailRoot){
+    try{
+      const doctorNameEl = detailRoot.querySelector(".doctor-name, .doctor-detail-name, .detail-doctor-name, h1, h2");
+      const doctorName = doctorNameEl ? String(doctorNameEl.textContent || "").trim() : "";
+      if(!doctorName || !Array.isArray(window.doctors)) return;
+
+      const doctor = window.doctors.find(d => String(d.name || "").trim() === doctorName);
+      if(!doctor) return;
+
+      const dayButtons = Array.from(detailRoot.querySelectorAll('[data-day], [data-availability-day], .weekday-chip, .week-day-btn, .day-dot, .day-pill'));
+      const selected = dayButtons
+        .filter(btn => btn.classList.contains("active") || btn.classList.contains("selected") || btn.getAttribute("aria-pressed") === "true")
+        .map(btn => (btn.dataset.day || btn.dataset.availabilityDay || btn.textContent || "").trim());
+
+      doctor.days = selected.slice();
+      doctor.disponibilita = selected.slice();
+      doctor.weekDays = selected.slice();
+
+      if(typeof window.saveAll === "function") {
+        window.saveAll();
+      } else {
+        try { localStorage.setItem("doctors", JSON.stringify(window.doctors)); } catch(e) {}
+      }
+    } catch(e) {
+      console.error("persistDoctorDays", e);
+    }
+  }
+
+  function bindDoctorDayToggle(){
+    try{
+      const detailRoot = document.getElementById("doctorDetailPage") || document;
+      const dayButtons = Array.from(detailRoot.querySelectorAll('[data-day], [data-availability-day], .weekday-chip, .week-day-btn, .day-dot, .day-pill'));
+      dayButtons.forEach(btn => {
+        if(btn.dataset.boundDoctorDay === "1") return;
+        btn.dataset.boundDoctorDay = "1";
+        btn.style.cursor = "pointer";
+        btn.addEventListener("click", function(ev){
+          ev.preventDefault();
+          ev.stopPropagation();
+
+          this.classList.toggle("active");
+          this.classList.toggle("selected");
+          const nowPressed = !(this.getAttribute("aria-pressed") === "true");
+          this.setAttribute("aria-pressed", nowPressed ? "true" : "false");
+
+          persistDoctorDays(detailRoot);
+        }, true);
+      });
+    } catch(e) {
+      console.error("bindDoctorDayToggle", e);
+    }
+  }
+
+  const observer = new MutationObserver(() => { bindDoctorDayToggle(); });
+  observer.observe(document.documentElement, {subtree:true, childList:true, attributes:true});
+
+  window.addEventListener("load", bindDoctorDayToggle);
+  document.addEventListener("click", function(){ setTimeout(bindDoctorDayToggle, 30); }, true);
+})();
