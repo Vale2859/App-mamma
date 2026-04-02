@@ -1142,46 +1142,18 @@ function exportCssBlock() {
     *{box-sizing:border-box}
     body{
       margin:0;
-      padding:22px;
+      padding:24px;
       font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-      background:linear-gradient(180deg,#eef4fb 0%,#e8f5f0 100%);
+      background:#eef3f7;
       color:#17212b;
     }
     .doc{
-      max-width:1020px;
+      max-width:980px;
       margin:0 auto;
       background:#fff;
-      border-radius:30px;
-      padding:28px 28px 20px;
-      box-shadow:0 18px 50px rgba(16,32,51,.12);
-      position:relative;
-      overflow:hidden;
-    }
-    .doc::before{
-      content:"";
-      position:absolute;
-      inset:0 0 auto 0;
-      height:10px;
-      background:linear-gradient(90deg,#21a366,#2f80ed,#7b61ff);
-    }
-    .close-btn{
-      position:fixed;
-      top:14px;
-      left:14px;
-      z-index:9999;
-      width:42px;
-      height:42px;
-      border:none;
-      border-radius:999px;
-      background:#ffffff;
-      color:#102033;
-      font-size:24px;
-      font-weight:900;
-      box-shadow:0 8px 24px rgba(16,32,51,.18);
-      cursor:pointer;
-      display:flex;
-      align-items:center;
-      justify-content:center;
+      border-radius:28px;
+      padding:30px 30px 22px;
+      box-shadow:0 12px 34px rgba(18,33,52,.10);
     }
     .head{
       display:flex;
@@ -1192,72 +1164,148 @@ function exportCssBlock() {
       margin-bottom:18px;
     }
     .head img{
-      width:78px;height:78px;border-radius:24px;object-fit:cover;
-      box-shadow:0 6px 18px rgba(27,44,70,.10)
+      width:76px;height:76px;border-radius:22px;object-fit:cover;
+      box-shadow:0 4px 16px rgba(27,44,70,.08)
     }
-    .brand-text h1{
+    .head h1{
       margin:0;
       font-size:38px;
       line-height:1;
       color:#102033;
     }
-    .brand-text p{
-      margin:7px 0 0;
+    .head p{
+      margin:6px 0 0;
       color:#6e7b88;
-      font-weight:900;
+      font-weight:800;
       text-transform:uppercase;
       letter-spacing:.16em;
-      font-size:12px;
+      font-size:13px;
     }
     .meta{
       margin-left:auto;
       text-align:right;
       color:#6e7b88;
       font-size:13px;
-      line-height:1.5;
-      font-weight:700;
+      line-height:1.45;
     }
     .period{
-      margin:12px 0 18px;
+      margin:10px 0 20px;
       text-align:center;
-      font-size:19px;
+      font-size:18px;
       font-weight:900;
-      color:#234261;
-      background:#f4f8fc;
-      border:1px solid #e5edf5;
-      padding:12px 16px;
-      border-radius:18px;
+      color:#304255;
     }
-    .summary{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:18px}
-    .summary-3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:18px}
+    .summary{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:14px;
+      margin-bottom:18px;
+    }
+    .summary-3{
+      display:grid;
+      grid-template-columns:repeat(3,minmax(0,1fr));
+      gap:14px;
+      margin-bottom:18px;
+    }
     .card{
-      background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);
+      background:#fff;
       border:1px solid #dfe7f0;
       border-radius:22px;
       padding:18px 18px;
       break-inside:avoid;
       page-break-inside:avoid;
-      box-shadow:0 6px 18px rgba(16,32,51,.05);
     }
-    .cardTitle{color:#6e7b88;font-size:12px;letter-spacing:.10em;text-transform:uppercase;font-weight:900;margin-bottom:10px}
-    .cardValue{color:#102033;font-size:30px;font-weight:900;line-height:1.1}
-    .card.report-entrate{background:linear-gradient(180deg,#eefbf4 0%,#ffffff 100%)}
-    .card.report-spese{background:linear-gradient(180deg,#fff5f5 0%,#ffffff 100%)}
-    .card.report-utile{background:linear-gradient(180deg,#eff6ff 0%,#ffffff 100%)}
-    .sectionTitle{margin:10px 0 12px;text-align:center;font-size:22px;font-weight:900;color:#102033}
-    .list{display:grid;gap:12px}
-    .row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-    .name{font-size:20px;font-weight:900;color:#102033;line-height:1.1}
-    .sub{margin-top:6px;color:#6e7b88;font-size:13px;line-height:1.45}
-    .amount{font-size:28px;font-weight:900;color:#102033;white-space:nowrap;text-align:right}
-    .badge{display:inline-flex;margin-top:10px;padding:7px 12px;border-radius:999px;background:#eef4fb;color:#234261;font-size:12px;font-weight:900;border:1px solid #d9e6f3}
-    .legend-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:10px}
-    .legend-item{display:flex;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:16px;background:#f7fafc;border:1px solid #e7edf4;font-weight:800}
-    .chart-card{background:#fff;border:1px solid #dfe7f0;border-radius:22px;padding:18px;margin:8px 0 18px;box-shadow:0 6px 18px rgba(16,32,51,.05);text-align:center}
-    .chart-card img{max-width:100%;height:auto;border-radius:14px;display:block;margin:0 auto}
-    .footer{margin-top:18px;padding-top:14px;border-top:1px solid #e4ebf3;color:#7c8794;font-size:12px;display:flex;justify-content:space-between;gap:12px}
+    .cardTitle{
+      color:#6e7b88;
+      font-size:12px;
+      letter-spacing:.10em;
+      text-transform:uppercase;
+      font-weight:900;
+      margin-bottom:10px;
+    }
+    .cardValue{
+      color:#102033;
+      font-size:30px;
+      font-weight:900;
+      line-height:1.1;
+    }
+    .sectionTitle{
+      margin:8px 0 12px;
+      text-align:center;
+      font-size:22px;
+      font-weight:900;
+      color:#102033;
+    }
+    .list{
+      display:grid;
+      gap:12px;
+    }
+    .row{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+    }
+    .name{
+      font-size:20px;
+      font-weight:900;
+      color:#102033;
+      line-height:1.1;
+    }
+    .sub{
+      margin-top:6px;
+      color:#6e7b88;
+      font-size:13px;
+      line-height:1.45;
+    }
+    .amount{
+      font-size:28px;
+      font-weight:900;
+      color:#102033;
+      white-space:nowrap;
+      text-align:right;
+    }
+    .badge{
+      display:inline-flex;
+      margin-top:10px;
+      padding:7px 12px;
+      border-radius:999px;
+      background:#eef4fb;
+      color:#234261;
+      font-size:12px;
+      font-weight:900;
+    }
+    .legend-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-top:10px;
+    }
+    .legend-item{
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      padding:12px 14px;
+      border-radius:16px;
+      background:#f7fafc;
+      border:1px solid #e7edf4;
+      font-weight:800;
+    }
+    .footer{
+      margin-top:18px;
+      padding-top:14px;
+      border-top:1px solid #e4ebf3;
+      color:#7c8794;
+      font-size:12px;
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+    }
     @page{size:A4;margin:11mm}
-    @media print{body{padding:0;background:#fff}.doc{box-shadow:none;border-radius:0;padding:0}.close-btn{display:none !important}}
+    @media print{
+      body{padding:0;background:#fff}
+      .doc{box-shadow:none;border-radius:0;padding:0}
+    }
   </style>`;
 }
 
@@ -1265,7 +1313,7 @@ function openPremiumDocument(title, html, autoPrint=false) {
   const win = window.open("", "_blank");
   if (!win) { alert("Consenti le finestre popup per continuare."); return; }
   win.document.open();
-  win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>${title}</title>${exportCssBlock()}</head><body><button class="close-btn" onclick="window.close()">×</button>${html}</body></html>`);
+  win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>${title}</title>${exportCssBlock()}</head><body>${html}</body></html>`);
   win.document.close();
   win.focus();
   if (autoPrint) setTimeout(() => win.print(), 250);
@@ -1293,30 +1341,38 @@ function html2pdfExport(filename, html) {
 function buildReportExportHtml() {
   if (typeof renderReport === "function") renderReport();
   const period = (document.getElementById("reportPeriodoLabel")?.textContent || "Periodo selezionato").trim();
-  const cards = Array.from(document.querySelectorAll("#reportCards .report-card, #reportCards .card")).map((card, idx) => {
+  const cards = Array.from(document.querySelectorAll("#reportCards .report-card, #reportCards .card")).map((card) => {
     const title = (card.querySelector(".report-card-title, p, .card-title")?.textContent || "").trim();
     const value = (card.querySelector(".report-card-value, h2, h3, strong")?.textContent || card.textContent || "").trim();
-    const cls = idx === 0 ? "report-entrate" : idx === 1 ? "report-spese" : idx === 2 ? "report-utile" : "";
-    return `<div class="card ${cls}"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
+    return `<div class="card"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
   }).join("");
+
   const legendRows = Array.from(document.querySelectorAll("#reportPieWrap .pie-legend-item, #reportPieWrap .legend-row, #reportPieWrap .category-row")).map((row) => {
     const left = row.children[0] ? row.children[0].textContent.trim() : row.textContent.trim();
     const right = row.children[1] ? row.children[1].textContent.trim() : "";
     return `<div class="legend-item"><span>${left}</span><strong>${right}</strong></div>`;
   }).join("");
-  const chartImg = captureChartDataUrl("reportChart") || captureChartDataUrl("reportPieChart") || captureChartDataUrl("chart1");
+
   return `
     <div class="doc">
       <div class="head">
         <img src="${getBrandLogoSrc()}" alt="ANVAMED">
-        <div class="brand-text"><h1>Report ANVAMED</h1><p>Manager</p></div>
-        <div class="meta"><div>${new Date().toLocaleDateString("it-IT")}</div><div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div></div>
+        <div>
+          <h1>Report ANVAMED</h1>
+          <p>Manager</p>
+        </div>
+        <div class="meta">
+          <div>${new Date().toLocaleDateString("it-IT")}</div>
+          <div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div>
+        </div>
       </div>
       <div class="period">${period}</div>
       <div class="summary">${cards}</div>
-      ${chartImg ? `<div class="sectionTitle">Grafico</div><div class="chart-card"><img src="${chartImg}" alt="Grafico report"></div>` : ""}
       ${legendRows ? `<div class="sectionTitle">Riepilogo dettagliato</div><div class="legend-grid">${legendRows}</div>` : ""}
-      <div class="footer"><span>Documento generato da ANVAMED Manager</span><span>${location.origin || ""}</span></div>
+      <div class="footer">
+        <span>Documento generato da ANVAMED Manager</span>
+        <span>${location.origin || ""}</span>
+      </div>
     </div>`;
 }
 
@@ -1328,6 +1384,7 @@ function buildInvoicesExportHtml() {
     const value = (card.querySelector(".report-card-value, h2, h3, strong")?.textContent || card.textContent || "").trim();
     return `<div class="card"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
   }).join("");
+
   const items = Array.from(document.querySelectorAll("#fattureList .fattura-card, #fattureList .card")).map((card) => {
     const title = (card.querySelector("h3, .fattura-name, .doctor-name, strong")?.textContent || "Medico").trim();
     const sub = (card.querySelector(".fattura-sub, .small-note, p, .sub")?.textContent || "").trim();
@@ -1335,28 +1392,36 @@ function buildInvoicesExportHtml() {
     const status = (card.querySelector(".fattura-status-btn, .badge, .status")?.textContent || "").trim();
     return `<div class="card"><div class="row"><div><div class="name">${title}</div><div class="sub">${sub}</div>${status ? `<div class="badge">${status}</div>` : ""}</div><div class="amount">${amount}</div></div></div>`;
   }).join("");
+
   return `
     <div class="doc">
       <div class="head">
         <img src="${getBrandLogoSrc()}" alt="ANVAMED">
-        <div class="brand-text"><h1>Fatture ANVAMED</h1><p>Manager</p></div>
-        <div class="meta"><div>${new Date().toLocaleDateString("it-IT")}</div><div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div></div>
+        <div>
+          <h1>Fatture ANVAMED</h1>
+          <p>Manager</p>
+        </div>
+        <div class="meta">
+          <div>${new Date().toLocaleDateString("it-IT")}</div>
+          <div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div>
+        </div>
       </div>
       <div class="period">${period}</div>
       <div class="summary-3">${summary}</div>
       <div class="sectionTitle">Dettaglio medici</div>
       <div class="list">${items}</div>
-      <div class="footer"><span>Documento generato da ANVAMED Manager</span><span>${location.origin || ""}</span></div>
+      <div class="footer">
+        <span>Documento generato da ANVAMED Manager</span>
+        <span>${location.origin || ""}</span>
+      </div>
     </div>`;
 }
 
 function printReport() { openPremiumDocument("Report ANVAMED", buildReportExportHtml(), true); }
-
 function printInvoices() { openPremiumDocument("Fatture ANVAMED", buildInvoicesExportHtml(), true); }
-
 function exportReportPdf() { html2pdfExport(`report-anvamed-${new Date().toISOString().slice(0,10)}.pdf`, buildReportExportHtml()); }
-
 function exportInvoicesPdf() { html2pdfExport(`fatture-anvamed-${new Date().toISOString().slice(0,10)}.pdf`, buildInvoicesExportHtml()); }
+
 
 document.addEventListener("DOMContentLoaded", () => {
   const reportBtn = document.getElementById("printReportBtn");
@@ -1381,35 +1446,173 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 
-function captureChartDataUrl(canvasId) {
-  try {
-    const canvas = document.getElementById(canvasId);
-    if (!canvas) return "";
-    return canvas.toDataURL("image/png", 1.0);
-  } catch(e) {
+
+
+/* --- Targeted premium export override --- */
+(function(){
+  function brandLogo(){
+    const img = document.querySelector(".brand-logo");
+    return img ? img.getAttribute("src") : "anvamed.jpg";
+  }
+
+  function findChartPng(selectors){
+    for (const sel of selectors) {
+      try {
+        const el = document.querySelector(sel);
+        if (el && typeof el.toDataURL === "function") return el.toDataURL("image/png");
+      } catch(e) {}
+    }
     return "";
   }
-}
 
-document.addEventListener("DOMContentLoaded", () => {
-  const printReportBtn = document.getElementById("printReportBtn");
-  if (printReportBtn && !printReportBtn.dataset.boundPremiumExport2) {
-    printReportBtn.dataset.boundPremiumExport2 = "1";
-    printReportBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); printReport(); });
+  function premiumDocCss(){
+    return `
+    <style>
+      *{box-sizing:border-box}
+      body{margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(180deg,#edf4fb 0%,#f8fbff 100%);color:#17212b}
+      .topbar{position:sticky;top:0;z-index:10;max-width:980px;margin:0 auto 16px;display:flex;justify-content:space-between;gap:12px}
+      .navbtn{border:none;border-radius:999px;background:#ffffff;color:#17304d;padding:12px 16px;font-weight:900;box-shadow:0 6px 18px rgba(16,32,51,.08);cursor:pointer}
+      .doc{max-width:980px;margin:0 auto;background:#fff;border-radius:28px;padding:30px 30px 22px;box-shadow:0 12px 34px rgba(18,33,52,.10);border:1px solid #e3ebf4}
+      .head{display:flex;align-items:center;gap:18px;padding-bottom:18px;border-bottom:1px solid #e4ebf3;margin-bottom:18px}
+      .head img{width:80px;height:80px;border-radius:22px;object-fit:cover;box-shadow:0 4px 16px rgba(27,44,70,.08)}
+      .brand h1{margin:0;font-size:40px;line-height:1;color:#102033}
+      .brand p{margin:7px 0 0;color:#6e7b88;font-weight:800;text-transform:uppercase;letter-spacing:.16em;font-size:13px}
+      .meta{margin-left:auto;text-align:right;color:#6e7b88;font-size:13px;line-height:1.5}
+      .period{margin:6px 0 22px;text-align:center;font-size:18px;font-weight:900;color:#304255;background:#f7fafc;border:1px solid #e6edf5;border-radius:16px;padding:12px 14px}
+      .summary2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:18px}
+      .summary3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:18px}
+      .card{background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);border:1px solid #dfe7f0;border-radius:22px;padding:18px;break-inside:avoid;page-break-inside:avoid;box-shadow:0 6px 18px rgba(16,32,51,.04)}
+      .cardTitle{color:#6e7b88;font-size:12px;letter-spacing:.10em;text-transform:uppercase;font-weight:900;margin-bottom:10px}
+      .cardValue{color:#102033;font-size:30px;font-weight:900;line-height:1.1}
+      .sectionTitle{margin:12px 0 14px;text-align:center;font-size:22px;font-weight:900;color:#102033}
+      .chartWrap{margin:18px auto 8px;border:1px solid #e5ecf4;border-radius:24px;padding:18px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);text-align:center}
+      .chartWrap img{max-width:100%;max-height:420px;object-fit:contain;border-radius:18px}
+      .list{display:grid;gap:12px}
+      .row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+      .name{font-size:20px;font-weight:900;color:#102033;line-height:1.1}
+      .sub{margin-top:6px;color:#6e7b88;font-size:13px;line-height:1.45}
+      .amount{font-size:28px;font-weight:900;color:#102033;white-space:nowrap;text-align:right}
+      .badge{display:inline-flex;margin-top:10px;padding:7px 12px;border-radius:999px;background:#eef4fb;color:#234261;font-size:12px;font-weight:900}
+      .legend{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
+      .legendItem{display:flex;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:16px;background:#f7fafc;border:1px solid #e7edf4;font-weight:800}
+      .footer{margin-top:18px;padding-top:14px;border-top:1px solid #e4ebf3;color:#7c8794;font-size:12px;display:flex;justify-content:space-between;gap:12px}
+      @page{size:A4;margin:11mm}
+      @media print{body{padding:0;background:#fff}.topbar{display:none}.doc{box-shadow:none;border-radius:0;padding:0;border:none}}
+    </style>`;
   }
-  const printInvoicesBtn = document.getElementById("printInvoicesBtn");
-  if (printInvoicesBtn && !printInvoicesBtn.dataset.boundPremiumExport2) {
-    printInvoicesBtn.dataset.boundPremiumExport2 = "1";
-    printInvoicesBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); printInvoices(); });
+
+  function topbarHtml(){
+    return `<div class="topbar">
+      <button class="navbtn" onclick="window.close(); if(!window.closed){ history.back(); }">✕ Chiudi</button>
+      <button class="navbtn" onclick="window.print()">🖨️ Stampa</button>
+    </div>`;
   }
-  const pdfReportBtn = document.getElementById("pdfReportBtn");
-  if (pdfReportBtn && !pdfReportBtn.dataset.boundPremiumExport2) {
-    pdfReportBtn.dataset.boundPremiumExport2 = "1";
-    pdfReportBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); exportReportPdf(); });
+
+  function openPremiumWindow(title, bodyHtml, autoPrint){
+    const win = window.open("", "_blank");
+    if (!win) { alert("Consenti le finestre popup per continuare."); return; }
+    win.document.open();
+    win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>${title}</title>${premiumDocCss()}</head><body>${topbarHtml()}${bodyHtml}</body></html>`);
+    win.document.close();
+    win.focus();
+    if (autoPrint) setTimeout(() => win.print(), 250);
   }
-  const pdfInvoicesBtn = document.getElementById("pdfInvoicesBtn");
-  if (pdfInvoicesBtn && !pdfInvoicesBtn.dataset.boundPremiumExport2) {
-    pdfInvoicesBtn.dataset.boundPremiumExport2 = "1";
-    pdfInvoicesBtn.addEventListener("click", (e) => { e.preventDefault(); e.stopPropagation(); exportInvoicesPdf(); });
+
+  function savePdf(filename, bodyHtml){
+    if (typeof html2pdf === "undefined") {
+      openPremiumWindow(filename, bodyHtml, false);
+      return;
+    }
+    const temp = document.createElement("div");
+    temp.innerHTML = bodyHtml;
+    document.body.appendChild(temp);
+    const node = temp.querySelector(".doc") || temp;
+    html2pdf().set({
+      margin: 0,
+      filename,
+      image: { type: "jpeg", quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#edf4fb" },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["css","legacy"] }
+    }).from(node).save().then(() => temp.remove()).catch(() => temp.remove());
   }
-});
+
+  function reportHtml(){
+    if (typeof renderReport === "function") renderReport();
+    const period = (document.getElementById("reportPeriodoLabel")?.textContent || "Periodo selezionato").trim();
+    const cards = Array.from(document.querySelectorAll("#reportCards .report-card, #reportCards .card")).map(card => {
+      const title = (card.querySelector(".report-card-title, p, .card-title")?.textContent || "").trim();
+      const value = (card.querySelector(".report-card-value, h2, h3, strong")?.textContent || card.textContent || "").trim();
+      return `<div class="card"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
+    }).join("");
+
+    const legend = Array.from(document.querySelectorAll("#reportPieWrap .pie-legend-item, #reportPieWrap .legend-row, #reportPieWrap .category-row")).map(row => {
+      const left = row.children[0] ? row.children[0].textContent.trim() : row.textContent.trim();
+      const right = row.children[1] ? row.children[1].textContent.trim() : "";
+      return `<div class="legendItem"><span>${left}</span><strong>${right}</strong></div>`;
+    }).join("");
+
+    const chart = findChartPng(["#chart1", "#reportChart", "#reportPieCanvas", "#reportPage canvas"]);
+    return `
+      <div class="doc">
+        <div class="head">
+          <img src="${brandLogo()}" alt="ANVAMED">
+          <div class="brand"><h1>Report ANVAMED</h1><p>Manager</p></div>
+          <div class="meta"><div>${new Date().toLocaleDateString("it-IT")}</div><div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div></div>
+        </div>
+        <div class="period">${period}</div>
+        <div class="summary2">${cards}</div>
+        ${chart ? `<div class="sectionTitle">Grafico</div><div class="chartWrap"><img src="${chart}" alt="Grafico report"></div>` : ""}
+        ${legend ? `<div class="sectionTitle">Riepilogo dettagliato</div><div class="legend">${legend}</div>` : ""}
+        <div class="footer"><span>Documento generato da ANVAMED Manager</span><span>${location.origin || ""}</span></div>
+      </div>`;
+  }
+
+  function invoicesHtml(){
+    if (typeof renderInvoices === "function") renderInvoices();
+    const period = (document.getElementById("fatturePeriodoLabel")?.textContent || "Fatture del periodo").trim();
+    const summary = Array.from(document.querySelectorAll("#fattureSummary .report-card, #fattureSummary .card")).map(card => {
+      const title = (card.querySelector(".report-card-title, p, .card-title")?.textContent || "").trim();
+      const value = (card.querySelector(".report-card-value, h2, h3, strong")?.textContent || card.textContent || "").trim();
+      return `<div class="card"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
+    }).join("");
+
+    const items = Array.from(document.querySelectorAll("#fattureList .fattura-card, #fattureList .card")).map(card => {
+      const title = (card.querySelector("h3, .fattura-name, .doctor-name, strong")?.textContent || "Medico").trim();
+      const sub = (card.querySelector(".fattura-sub, .small-note, p, .sub")?.textContent || "").trim();
+      const amount = (card.querySelector(".fattura-total, .amount, .report-card-value")?.textContent || "").trim();
+      const status = (card.querySelector(".fattura-status-btn, .badge, .status")?.textContent || "").trim();
+      return `<div class="card"><div class="row"><div><div class="name">${title}</div><div class="sub">${sub}</div>${status ? `<div class="badge">${status}</div>` : ""}</div><div class="amount">${amount}</div></div></div>`;
+    }).join("");
+
+    const chart = findChartPng(["#chart2", "#fattureChart", "#fattureCanvas", "#fatturePage canvas"]);
+    return `
+      <div class="doc">
+        <div class="head">
+          <img src="${brandLogo()}" alt="ANVAMED">
+          <div class="brand"><h1>Fatture ANVAMED</h1><p>Manager</p></div>
+          <div class="meta"><div>${new Date().toLocaleDateString("it-IT")}</div><div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div></div>
+        </div>
+        <div class="period">${period}</div>
+        <div class="summary3">${summary}</div>
+        ${chart ? `<div class="sectionTitle">Grafico</div><div class="chartWrap"><img src="${chart}" alt="Grafico fatture"></div>` : ""}
+        <div class="sectionTitle">Dettaglio medici</div>
+        <div class="list">${items}</div>
+        <div class="footer"><span>Documento generato da ANVAMED Manager</span><span>${location.origin || ""}</span></div>
+      </div>`;
+  }
+
+  window.__premiumPrintReport = function(){ openPremiumWindow("Report ANVAMED", reportHtml(), true); };
+  window.__premiumPrintInvoices = function(){ openPremiumWindow("Fatture ANVAMED", invoicesHtml(), true); };
+  window.__premiumPdfReport = function(){ savePdf(`report-anvamed-${new Date().toISOString().slice(0,10)}.pdf`, reportHtml()); };
+  window.__premiumPdfInvoices = function(){ savePdf(`fatture-anvamed-${new Date().toISOString().slice(0,10)}.pdf`, invoicesHtml()); };
+
+  document.addEventListener("click", function(e){
+    const t = e.target;
+    if (!t) return;
+    if (t.id === "printReportBtn") { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); window.__premiumPrintReport(); }
+    if (t.id === "printInvoicesBtn") { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); window.__premiumPrintInvoices(); }
+    if (t.id === "pdfReportBtn") { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); window.__premiumPdfReport(); }
+    if (t.id === "pdfInvoicesBtn") { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); window.__premiumPdfInvoices(); }
+  }, true);
+})();
