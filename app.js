@@ -851,7 +851,9 @@ function setupEventListeners() {
   document.getElementById("printReportBtn").addEventListener("click", printReport);
   document.getElementById("printInvoicesBtn").addEventListener("click", printInvoices);
   document.getElementById("exportBackupBtn").addEventListener("click", exportData);
+  document.querySelectorAll(".export-backup-btn").forEach((btn) => btn.addEventListener("click", exportData));
   document.getElementById("importFile").addEventListener("change", (event) => importDataFromFile(event.target.files[0]));
+  document.querySelectorAll(".import-backup-input").forEach((input) => input.addEventListener("change", (event) => importDataFromFile(event.target.files[0])));
   document.getElementById("homeTabGiorno").addEventListener("click", () => setHomeFiltroTipo("giorno"));
   document.getElementById("homeTabMese").addEventListener("click", () => setHomeFiltroTipo("mese"));
   document.getElementById("homeTabAnno").addEventListener("click", () => setHomeFiltroTipo("anno"));
@@ -1035,43 +1037,4 @@ window.addEventListener("load", () => {
 
   window.addEventListener("load", bindDoctorDayToggle);
   document.addEventListener("click", function(){ setTimeout(bindDoctorDayToggle, 30); }, true);
-})();
-
-
-
-/* --- Safe runtime enhancements --- */
-(function(){
-  function bindDoctorAvailability(){
-    const wrap = document.getElementById("doctorAvailability");
-    if(!wrap) return;
-    wrap.querySelectorAll("[data-availability-key]").forEach((el) => {
-      if(el.dataset.boundAvailability === "1") return;
-      el.dataset.boundAvailability = "1";
-      el.addEventListener("click", function(){
-        // allow original listener to run if present, but preserve visual state
-        setTimeout(() => {
-          this.classList.toggle("active", this.getAttribute("aria-pressed") === "true" || this.classList.contains("active"));
-        }, 10);
-      }, true);
-    });
-  }
-
-  function premiumPrintOpen(pageId){
-    document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
-    const page = document.getElementById(pageId);
-    if(page) page.classList.add("active");
-    setTimeout(() => window.print(), 80);
-  }
-
-  if(typeof window.printReport === "function"){
-    window.printReport = function(){ premiumPrintOpen("reportPage"); };
-  }
-  if(typeof window.printInvoices === "function"){
-    window.printInvoices = function(){ premiumPrintOpen("fatturePage"); };
-  }
-
-  const mo = new MutationObserver(() => bindDoctorAvailability());
-  mo.observe(document.documentElement, {subtree:true, childList:true, attributes:true});
-  window.addEventListener("load", bindDoctorAvailability);
-  document.addEventListener("click", () => setTimeout(bindDoctorAvailability, 40), true);
 })();
