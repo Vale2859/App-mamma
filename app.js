@@ -552,6 +552,19 @@ function toggleDoctorAvailability(key) { const doctor = getDoctorById(currentDoc
 function buildTopServices(list) { const map = {}; list.forEach((entry) => { const key = entry.prestazione.trim(); map[key] = (map[key] || 0) + 1; }); return Object.entries(map).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "it")).slice(0, 5); }
 
 function renderDoctorDetail() {
+  const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
+  document.getElementById("doctorDetailName").textContent = doctor.name;
+  const availabilityWrap = document.getElementById("doctorAvailability");
+  if (availabilityWrap) {
+    availabilityWrap.innerHTML = WEEK_DAYS.map((label, idx) => {
+      const key = `${label}-${idx}`;
+      return `<span class="${doctor.availability.includes(key) ? "active" : ""}" data-availability-key="${key}" aria-pressed="${doctor.availability.includes(key) ? "true" : "false"}">${label[0]}</span>`;
+    }).join("");
+    availabilityWrap.querySelectorAll("[data-availability-key]").forEach((el) => {
+      el.addEventListener("click", () => toggleDoctorAvailability(el.dataset.availabilityKey));
+    });
+  }
+
   const month = normalizeMonthISO(document.getElementById("doctorDetailMonth").value || currentMonthISO(), currentMonthISO()); document.getElementById("doctorDetailMonth").value = month;
   const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
   document.getElementById("doctorDetailName").textContent = doctor.name; document.getElementById("doctorMonthLabel").textContent = `Prestazioni di ${monthLabel(month)}`;
@@ -762,7 +775,11 @@ function renderReport() {
   `;
 }
 
-function printReport() { window.print(); }
+function printReport() {
+  go("reportPage");
+  document.body.classList.add("print-report");
+  setTimeout(() => window.print(), 80);
+}
 function invoiceKey(doctorId, fromDate, toDate, type) { return `${doctorId}__${fromDate}__${toDate}__${type}`; }
 function getInvoiceFilters() {
   const fromDate = normalizeDateISO(document.getElementById("fattureDateFrom").value, monthStartISO(currentMonthISO()));
@@ -795,7 +812,11 @@ function renderInvoices() {
   wrap.querySelectorAll("[data-invoice-doctor]").forEach((btn) => btn.addEventListener("click", () => cycleInvoiceStatus(Number(btn.dataset.invoiceDoctor), fromDate, toDate, type)));
   saveUiState();
 }
-function printInvoices() { window.print(); }
+function printInvoices() {
+  go("fatturePage");
+  document.body.classList.add("print-invoices");
+  setTimeout(() => window.print(), 80);
+}
 
 function daysInMonth(year, monthIndex) { return new Date(year, monthIndex + 1, 0).getDate(); }
 function renderCalendar() {
@@ -1038,3 +1059,8 @@ window.addEventListener("load", () => {
   window.addEventListener("load", bindDoctorDayToggle);
   document.addEventListener("click", function(){ setTimeout(bindDoctorDayToggle, 30); }, true);
 })();
+
+
+window.addEventListener("afterprint", () => {
+  document.body.classList.remove("print-report", "print-invoices");
+});

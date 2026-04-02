@@ -1591,3 +1591,89 @@ body{
 .quick-tools .small-action-btn{
   min-height:42px;
 }
+
+
+/* --- Premium print layout --- */
+@media print{
+  body{
+    background:#ffffff !important;
+    color:#111827 !important;
+    -webkit-print-color-adjust:exact;
+    print-color-adjust:exact;
+  }
+
+  .menu,
+  .popup,
+  .popup.hidden,
+  .small-action-btn,
+  .icon-btn,
+  .main-btn,
+  .calendar-open-btn,
+  .quick-tools,
+  .period-tabs,
+  .filter-tabs,
+  .print-hide,
+  #exportBackupBtn,
+  #importFile,
+  .page:not(.active){
+    display:none !important;
+  }
+
+  .header{
+    padding:0 0 14px !important;
+    margin-bottom:10px !important;
+  }
+
+  .brand-logo{
+    width:72px !important;
+    height:72px !important;
+    box-shadow:none !important;
+  }
+
+  .page.active{
+    display:block !important;
+    width:100% !important;
+  }
+
+  .card,
+  .medico-card,
+  .report-card,
+  .fattura-card,
+  .pie-card,
+  .prestazione-row,
+  .simple-medico-row,
+  .category-row{
+    break-inside:avoid;
+    page-break-inside:avoid;
+    box-shadow:none !important;
+    border:1px solid #d9e1ea !important;
+    border-radius:16px !important;
+    background:#fff !important;
+    margin:0 0 12px 0 !important;
+    padding:14px !important;
+  }
+
+  #reportCards{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:12px !important;
+  }
+
+  .pie-layout{
+    display:grid !important;
+    grid-template-columns:240px 1fr !important;
+    align-items:center !important;
+    gap:18px !important;
+  }
+
+  #fattureList{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:12px !important;
+  }
+
+  .fattura-status-btn{
+    border:none !important;
+    box-shadow:none !important;
+  }
+}
