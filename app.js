@@ -556,17 +556,43 @@ function toggleDoctorAvailability(key) { const doctor = getDoctorById(currentDoc
 function buildTopServices(list) { const map = {}; list.forEach((entry) => { const key = entry.prestazione.trim(); map[key] = (map[key] || 0) + 1; }); return Object.entries(map).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "it")).slice(0, 5); }
 
 function renderDoctorDetail() {
-  const month = normalizeMonthISO(document.getElementById("doctorDetailMonth").value || currentMonthISO(), currentMonthISO()); document.getElementById("doctorDetailMonth").value = month;
-  const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
-  document.getElementById("doctorDetailName").textContent = doctor.name; document.getElementById("doctorMonthLabel").textContent = `Prestazioni di ${monthLabel(month)}`;
-  const list = entries.filter((entry) => entry.doctorId === currentDoctorId && entry.data.startsWith(month)).sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
+  const month = normalizeMonthISO(document.getElementById("doctorDetailMonth").value || currentMonthISO(), currentMonthISO());
+  document.getElementById("doctorDetailMonth").value = month;
+  const doctor = getDoctorById(currentDoctorId);
+  if (!doctor) return;
+
+  document.getElementById("doctorDetailName").textContent = doctor.name;
+  document.getElementById("doctorMonthLabel").textContent = `Prestazioni di ${monthLabel(month)}`;
+
+  const availabilityWrap = document.getElementById("doctorAvailability");
+  if (availabilityWrap) {
+    availabilityWrap.innerHTML = WEEK_DAYS.map((label, idx) => {
+      const key = `${label}-${idx}`;
+      const active = Array.isArray(doctor.availability) && doctor.availability.includes(key);
+      return `<span class="${active ? "active" : ""}" data-availability-key="${key}" aria-pressed="${active ? "true" : "false"}">${label[0]}</span>`;
+    }).join("");
+    availabilityWrap.querySelectorAll("[data-availability-key]").forEach((el) => {
+      el.addEventListener("click", () => toggleDoctorAvailability(el.dataset.availabilityKey));
+    });
+  }
+
+  const list = entries
+    .filter((entry) => entry.doctorId === currentDoctorId && entry.data.startsWith(month))
+    .sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
+
   document.getElementById("doctorTotMedico").textContent = currency(list.reduce((s, e) => s + e.quotaMedico, 0));
   document.getElementById("doctorTotStruttura").textContent = currency(list.reduce((s, e) => s + e.quotaStruttura, 0));
   document.getElementById("doctorTotPrestazioni").textContent = list.length;
-  const topServices = buildTopServices(list); const maxCount = topServices.length ? topServices[0][1] : 1;
-  document.getElementById("doctorTopServices").innerHTML = topServices.length ? topServices.map(([name, count]) => `<div class="top-service-row"><div class="top-service-head"><span>${escapeHtml(name)}</span><strong>${count}</strong></div><div class="top-service-bar"><span style="width:${Math.max(14, (count / maxCount) * 100)}%"></span></div></div>`).join("") : `<div class="empty-inline">Nessuna prestazione nel mese selezionato.</div>`;
+
+  const topServices = buildTopServices(list);
+  const maxCount = topServices.length ? topServices[0][1] : 1;
+  document.getElementById("doctorTopServices").innerHTML = topServices.length
+    ? topServices.map(([name, count]) => `<div class="top-service-row"><div class="top-service-head"><span>${escapeHtml(name)}</span><strong>${count}</strong></div><div class="top-service-bar"><span style="width:${Math.max(14, (count / maxCount) * 100)}%"></span></div></div>`).join("")
+    : `<div class="empty-inline">Nessuna prestazione nel mese selezionato.</div>`;
+
   const wrap = document.getElementById("doctorMonthPrestazioni");
   wrap.innerHTML = list.map((entry) => `<div class="medico-card ${entry.tipoVoce === "riservata" ? "is-riservata" : ""}"><div class="prestazione-top"><div><div class="prestazione-title">${escapeHtml(entry.prestazione)}</div><div class="prestazione-date">${formatDateLabel(entry.data)}</div></div><div class="prestazione-amount">${currency(entry.importo)}</div></div><div class="prestazione-gains"><span class="medico-val">👨‍⚕️ ${currency(entry.quotaMedico)}</span><span class="struttura-val">🏥 ${currency(entry.quotaStruttura)}</span></div><div class="entry-badges"><span class="entry-badge ${entry.tipoVoce}">${entry.tipoVoce}</span><span class="entry-badge ${entry.pagamento}">${entry.pagamento}</span></div><div class="card-actions" style="margin-top:12px;"><button class="icon-btn" type="button" data-edit-entry="${entry.id}">✏️</button><button class="icon-btn" type="button" data-delete-entry="${entry.id}">🗑️</button></div></div>`).join("") || `<div class="medico-card">Nessuna prestazione nel mese selezionato.</div>`;
+
   wrap.querySelectorAll("[data-edit-entry]").forEach((btn) => btn.addEventListener("click", () => openEntryPopup(Number(btn.dataset.editEntry))));
   wrap.querySelectorAll("[data-delete-entry]").forEach((btn) => btn.addEventListener("click", () => deleteEntry(Number(btn.dataset.deleteEntry))));
   saveUiState();
