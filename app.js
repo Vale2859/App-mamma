@@ -552,19 +552,6 @@ function toggleDoctorAvailability(key) { const doctor = getDoctorById(currentDoc
 function buildTopServices(list) { const map = {}; list.forEach((entry) => { const key = entry.prestazione.trim(); map[key] = (map[key] || 0) + 1; }); return Object.entries(map).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "it")).slice(0, 5); }
 
 function renderDoctorDetail() {
-  const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
-  document.getElementById("doctorDetailName").textContent = doctor.name;
-  const availabilityWrap = document.getElementById("doctorAvailability");
-  if (availabilityWrap) {
-    availabilityWrap.innerHTML = WEEK_DAYS.map((label, idx) => {
-      const key = `${label}-${idx}`;
-      return `<span class="${doctor.availability.includes(key) ? "active" : ""}" data-availability-key="${key}" aria-pressed="${doctor.availability.includes(key) ? "true" : "false"}">${label[0]}</span>`;
-    }).join("");
-    availabilityWrap.querySelectorAll("[data-availability-key]").forEach((el) => {
-      el.addEventListener("click", () => toggleDoctorAvailability(el.dataset.availabilityKey));
-    });
-  }
-
   const month = normalizeMonthISO(document.getElementById("doctorDetailMonth").value || currentMonthISO(), currentMonthISO()); document.getElementById("doctorDetailMonth").value = month;
   const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
   document.getElementById("doctorDetailName").textContent = doctor.name; document.getElementById("doctorMonthLabel").textContent = `Prestazioni di ${monthLabel(month)}`;
@@ -775,11 +762,7 @@ function renderReport() {
   `;
 }
 
-function printReport() {
-  go("reportPage");
-  document.body.classList.add("print-report");
-  setTimeout(() => window.print(), 80);
-}
+function printReport() { window.print(); }
 function invoiceKey(doctorId, fromDate, toDate, type) { return `${doctorId}__${fromDate}__${toDate}__${type}`; }
 function getInvoiceFilters() {
   const fromDate = normalizeDateISO(document.getElementById("fattureDateFrom").value, monthStartISO(currentMonthISO()));
@@ -812,11 +795,7 @@ function renderInvoices() {
   wrap.querySelectorAll("[data-invoice-doctor]").forEach((btn) => btn.addEventListener("click", () => cycleInvoiceStatus(Number(btn.dataset.invoiceDoctor), fromDate, toDate, type)));
   saveUiState();
 }
-function printInvoices() {
-  go("fatturePage");
-  document.body.classList.add("print-invoices");
-  setTimeout(() => window.print(), 80);
-}
+function printInvoices() { window.print(); }
 
 function daysInMonth(year, monthIndex) { return new Date(year, monthIndex + 1, 0).getDate(); }
 function renderCalendar() {
@@ -872,9 +851,7 @@ function setupEventListeners() {
   document.getElementById("printReportBtn").addEventListener("click", printReport);
   document.getElementById("printInvoicesBtn").addEventListener("click", printInvoices);
   document.getElementById("exportBackupBtn").addEventListener("click", exportData);
-  document.querySelectorAll(".export-backup-btn").forEach((btn) => btn.addEventListener("click", exportData));
   document.getElementById("importFile").addEventListener("change", (event) => importDataFromFile(event.target.files[0]));
-  document.querySelectorAll(".import-backup-input").forEach((input) => input.addEventListener("change", (event) => importDataFromFile(event.target.files[0])));
   document.getElementById("homeTabGiorno").addEventListener("click", () => setHomeFiltroTipo("giorno"));
   document.getElementById("homeTabMese").addEventListener("click", () => setHomeFiltroTipo("mese"));
   document.getElementById("homeTabAnno").addEventListener("click", () => setHomeFiltroTipo("anno"));
@@ -1061,6 +1038,40 @@ window.addEventListener("load", () => {
 })();
 
 
-window.addEventListener("afterprint", () => {
-  document.body.classList.remove("print-report", "print-invoices");
-});
+
+/* --- Safe runtime enhancements --- */
+(function(){
+  function bindDoctorAvailability(){
+    const wrap = document.getElementById("doctorAvailability");
+    if(!wrap) return;
+    wrap.querySelectorAll("[data-availability-key]").forEach((el) => {
+      if(el.dataset.boundAvailability === "1") return;
+      el.dataset.boundAvailability = "1";
+      el.addEventListener("click", function(){
+        // allow original listener to run if present, but preserve visual state
+        setTimeout(() => {
+          this.classList.toggle("active", this.getAttribute("aria-pressed") === "true" || this.classList.contains("active"));
+        }, 10);
+      }, true);
+    });
+  }
+
+  function premiumPrintOpen(pageId){
+    document.querySelectorAll(".page").forEach((page) => page.classList.remove("active"));
+    const page = document.getElementById(pageId);
+    if(page) page.classList.add("active");
+    setTimeout(() => window.print(), 80);
+  }
+
+  if(typeof window.printReport === "function"){
+    window.printReport = function(){ premiumPrintOpen("reportPage"); };
+  }
+  if(typeof window.printInvoices === "function"){
+    window.printInvoices = function(){ premiumPrintOpen("fatturePage"); };
+  }
+
+  const mo = new MutationObserver(() => bindDoctorAvailability());
+  mo.observe(document.documentElement, {subtree:true, childList:true, attributes:true});
+  window.addEventListener("load", bindDoctorAvailability);
+  document.addEventListener("click", () => setTimeout(bindDoctorAvailability, 40), true);
+})();

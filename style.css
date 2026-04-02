@@ -1581,19 +1581,7 @@ body{
 }
 
 
-.quick-tools{
-  display:flex;
-  gap:10px;
-  align-items:center;
-  flex-wrap:wrap;
-  margin:10px 0 14px;
-}
-.quick-tools .small-action-btn{
-  min-height:42px;
-}
-
-
-/* --- Premium print layout --- */
+/* --- Premium print / visual cleanup --- */
 @media print{
   body{
     background:#ffffff !important;
@@ -1604,24 +1592,54 @@ body{
 
   .menu,
   .popup,
-  .popup.hidden,
   .small-action-btn,
   .icon-btn,
   .main-btn,
-  .calendar-open-btn,
+  .toolbar,
+  .backup-tools,
   .quick-tools,
+  .detail-tools,
   .period-tabs,
-  .filter-tabs,
-  .print-hide,
+  .tab,
+  .calendar-open-btn,
   #exportBackupBtn,
-  #importFile,
-  .page:not(.active){
+  #importFile{
     display:none !important;
   }
 
-  .header{
-    padding:0 0 14px !important;
-    margin-bottom:10px !important;
+  .page{
+    display:block !important;
+    width:100% !important;
+    background:#fff !important;
+  }
+
+  .card,
+  .medico-card,
+  .report-card,
+  .fattura-card,
+  .prestazione-row,
+  .simple-medico-row,
+  .category-row{
+    box-shadow:none !important;
+    border:1px solid #dbe3ec !important;
+    border-radius:16px !important;
+    background:#fff !important;
+    break-inside:avoid;
+    page-break-inside:avoid;
+    margin:0 0 12px 0 !important;
+    padding:14px !important;
+  }
+
+  #reportCards{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:12px !important;
+  }
+
+  #fattureList{
+    display:grid !important;
+    grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+    gap:12px !important;
   }
 
   .brand-logo{
@@ -1629,51 +1647,12 @@ body{
     height:72px !important;
     box-shadow:none !important;
   }
+}
 
-  .page.active{
-    display:block !important;
-    width:100% !important;
-  }
-
-  .card,
-  .medico-card,
-  .report-card,
-  .fattura-card,
-  .pie-card,
-  .prestazione-row,
-  .simple-medico-row,
-  .category-row{
-    break-inside:avoid;
-    page-break-inside:avoid;
-    box-shadow:none !important;
-    border:1px solid #d9e1ea !important;
-    border-radius:16px !important;
-    background:#fff !important;
-    margin:0 0 12px 0 !important;
-    padding:14px !important;
-  }
-
-  #reportCards{
-    display:grid !important;
-    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
-    gap:12px !important;
-  }
-
-  .pie-layout{
-    display:grid !important;
-    grid-template-columns:240px 1fr !important;
-    align-items:center !important;
-    gap:18px !important;
-  }
-
-  #fattureList{
-    display:grid !important;
-    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
-    gap:12px !important;
-  }
-
-  .fattura-status-btn{
-    border:none !important;
-    box-shadow:none !important;
-  }
+/* visual feedback on doctor availability */
+#doctorAvailability [data-availability-key]{
+  cursor:pointer;
+}
+#doctorAvailability [data-availability-key].active{
+  box-shadow:inset 0 0 0 3px rgba(255,255,255,.28), 0 0 0 3px rgba(37,99,235,.12) !important;
 }
