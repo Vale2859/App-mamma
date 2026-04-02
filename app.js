@@ -113,7 +113,7 @@ function applyRegisteredPercentForPopup() {
   if (!cfg) return false;
   document.getElementById("popupPercMedico").value = cfg.percMedico;
   document.getElementById("popupPercStruttura").value = Number((100 - cfg.percMedico).toFixed(2));
-  if (!editingEntryId && cfg.prezzo) document.getElementById("popupImporto").value = cfg.prezzo;
+  if (!editingEntryId) document.getElementById("popupImporto").value = Number.isFinite(Number(cfg.prezzo)) ? Number(cfg.prezzo).toFixed(2) : "0";
   updatePopupPreview();
   return true;
 }
@@ -393,13 +393,17 @@ function saveEntry() {
   const safeImporto = Number(importo.toFixed(2)); const safePercMedico = Number(percMedico.toFixed(2));
   const quotaMedico = Number((safeImporto * safePercMedico / 100).toFixed(2)); const quotaStruttura = Number((safeImporto - quotaMedico).toFixed(2));
   upsertDoctorPrestazione(doctorId, prestazione, safePercMedico, safeImporto);
+  currentDoctorId = doctorId;
   const payload = { doctorId, prestazione, data, importo: safeImporto, percMedico: safePercMedico, quotaMedico, quotaStruttura, tipoVoce, pagamento, transaThaw: false };
   if (editingEntryId) {
     const entry = entries.find((item) => item.id === editingEntryId); if (!entry) return;
     Object.assign(entry, payload);
   } else entries.push({ id: createId(), ...payload });
   entries.sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
-  saveAll(); renderAll(); closeEntryPopup();
+  saveAll(); renderAll();
+  const doctorMonthInput = document.getElementById("doctorDetailMonth");
+  if (doctorMonthInput) doctorMonthInput.value = data.slice(0,7);
+  closeEntryPopup();
 }
 
 function deleteEntry(id) { if (!confirm("Eliminare questa prestazione?")) return; entries = entries.filter((entry) => entry.id !== id); saveAll(); renderAll(); }
@@ -540,41 +544,20 @@ function renderDoctorsPage() {
   document.querySelectorAll("[data-delete-doctor]").forEach((btn) => btn.addEventListener("click", () => deleteDoctor(Number(btn.dataset.deleteDoctor))));
 }
 
-
-function renderDoctorAvailability(doctor) {
-  const wrap = document.getElementById("doctorAvailability");
-  if (!wrap || !doctor) return;
-  const selected = new Set(Array.isArray(doctor.availability) ? doctor.availability : []);
-  wrap.innerHTML = WEEK_DAYS.map((label, idx) => {
-    const key = `${label}-${idx}`;
-    const active = selected.has(key);
-    return `<button class="day-pill-btn ${active ? "active" : ""}" type="button" data-availability-key="${key}" aria-pressed="${active ? "true" : "false"}" onclick="toggleDoctorAvailability('${key}')"><span>${escapeHtml(label)}</span></button>`;
-  }).join("");
-}
-
 function openDoctorDetail(doctorId) {
   const doctor = getDoctorById(doctorId); if (!doctor) return;
-  currentDoctorId = doctorId;
-  document.getElementById("doctorDetailName").textContent = doctor.name;
-  renderDoctorAvailability(doctor);
-  if (!document.getElementById("doctorDetailMonth").value) document.getElementById("doctorDetailMonth").value = currentMonthISO();
+  currentDoctorId = doctorId; document.getElementById("doctorDetailName").textContent = doctor.name;
+  document.getElementById("doctorAvailability").innerHTML = WEEK_DAYS.map((label, idx) => { const key = `${label}-${idx}`; return `<span class="${doctor.availability.includes(key) ? "active" : ""}" data-availability-key="${key}">${label[0]}</span>`; }).join("");
+  document.querySelectorAll("[data-availability-key]").forEach((el) => el.addEventListener("click", () => toggleDoctorAvailability(el.dataset.availabilityKey)));
+  document.getElementById("doctorDetailMonth").value = currentMonthISO();
   go("doctorDetailPage");
 }
-function toggleDoctorAvailability(key) {
-  const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
-  doctor.availability = Array.isArray(doctor.availability) ? doctor.availability : [];
-  doctor.availability = doctor.availability.includes(key)
-    ? doctor.availability.filter((item) => item !== key)
-    : [...doctor.availability, key];
-  saveAll();
-  renderDoctorAvailability(doctor);
-}
+function toggleDoctorAvailability(key) { const doctor = getDoctorById(currentDoctorId); if (!doctor) return; doctor.availability = doctor.availability.includes(key) ? doctor.availability.filter((item) => item !== key) : [...doctor.availability, key]; saveAll(); renderDoctorDetail(); }
 function buildTopServices(list) { const map = {}; list.forEach((entry) => { const key = entry.prestazione.trim(); map[key] = (map[key] || 0) + 1; }); return Object.entries(map).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "it")).slice(0, 5); }
 
 function renderDoctorDetail() {
   const month = normalizeMonthISO(document.getElementById("doctorDetailMonth").value || currentMonthISO(), currentMonthISO()); document.getElementById("doctorDetailMonth").value = month;
   const doctor = getDoctorById(currentDoctorId); if (!doctor) return;
-  renderDoctorAvailability(doctor);
   document.getElementById("doctorDetailName").textContent = doctor.name; document.getElementById("doctorMonthLabel").textContent = `Prestazioni di ${monthLabel(month)}`;
   const list = entries.filter((entry) => entry.doctorId === currentDoctorId && entry.data.startsWith(month)).sort((a, b) => b.data.localeCompare(a.data) || b.id - a.id);
   document.getElementById("doctorTotMedico").textContent = currency(list.reduce((s, e) => s + e.quotaMedico, 0));
@@ -783,7 +766,7 @@ function renderReport() {
   `;
 }
 
-
+function printReport() { window.print(); }
 function invoiceKey(doctorId, fromDate, toDate, type) { return `${doctorId}__${fromDate}__${toDate}__${type}`; }
 function getInvoiceFilters() {
   const fromDate = normalizeDateISO(document.getElementById("fattureDateFrom").value, monthStartISO(currentMonthISO()));
@@ -816,7 +799,7 @@ function renderInvoices() {
   wrap.querySelectorAll("[data-invoice-doctor]").forEach((btn) => btn.addEventListener("click", () => cycleInvoiceStatus(Number(btn.dataset.invoiceDoctor), fromDate, toDate, type)));
   saveUiState();
 }
-
+function printInvoices() { window.print(); }
 
 function daysInMonth(year, monthIndex) { return new Date(year, monthIndex + 1, 0).getDate(); }
 function renderCalendar() {
@@ -1084,535 +1067,25 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
-/* --- Premium PDF / print for Report and Fatture --- */
-
-
-
-
-
-
-
-
-
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  const reportBtn = document.getElementById("printReportBtn");
-  if (reportBtn && !reportBtn.dataset.boundPremiumExport) {
-    const clone = reportBtn.cloneNode(true);
-    reportBtn.parentNode.replaceChild(clone, reportBtn);
-    clone.dataset.boundPremiumExport = "1";
-    clone.addEventListener("click", printReport);
-  }
-  const invBtn = document.getElementById("printInvoicesBtn");
-  if (invBtn && !invBtn.dataset.boundPremiumExport) {
-    const clone = invBtn.cloneNode(true);
-    invBtn.parentNode.replaceChild(clone, invBtn);
-    clone.dataset.boundPremiumExport = "1";
-    clone.addEventListener("click", printInvoices);
-  }
-  const pdfReportBtn = document.getElementById("pdfReportBtn");
-  if (pdfReportBtn && !pdfReportBtn.dataset.boundPremiumExport) {
-    const clone = pdfReportBtn.cloneNode(true);
-    pdfReportBtn.parentNode.replaceChild(clone, pdfReportBtn);
-    clone.dataset.boundPremiumExport = "1";
-    clone.addEventListener("click", exportReportPdf);
-  }
-  const pdfInvoicesBtn = document.getElementById("pdfInvoicesBtn");
-  if (pdfInvoicesBtn && !pdfInvoicesBtn.dataset.boundPremiumExport) {
-    const clone = pdfInvoicesBtn.cloneNode(true);
-    pdfInvoicesBtn.parentNode.replaceChild(clone, pdfInvoicesBtn);
-    clone.dataset.boundPremiumExport = "1";
-    clone.addEventListener("click", exportInvoicesPdf);
-  }
-});
-
-
-
-
-/* --- Restored premium PDF / print functions --- */
-function getBrandLogoSrc() {
-  const img = document.querySelector(".brand-logo");
-  return img ? img.getAttribute("src") : "anvamed.jpg";
-}
-
-function exportCssBlock() {
-  return `
-  <style>
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      padding:24px;
-      font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;
-      background:#eef3f7;
-      color:#17212b;
-    }
-    .doc{
-      max-width:980px;
-      margin:0 auto;
-      background:#fff;
-      border-radius:28px;
-      padding:30px 30px 22px;
-      box-shadow:0 12px 34px rgba(18,33,52,.10);
-    }
-    .head{
-      display:flex;
-      align-items:center;
-      gap:16px;
-      padding-bottom:18px;
-      border-bottom:1px solid #e4ebf3;
-      margin-bottom:18px;
-    }
-    .head img{
-      width:76px;height:76px;border-radius:22px;object-fit:cover;
-      box-shadow:0 4px 16px rgba(27,44,70,.08)
-    }
-    .head h1{
-      margin:0;
-      font-size:38px;
-      line-height:1;
-      color:#102033;
-    }
-    .head p{
-      margin:6px 0 0;
-      color:#6e7b88;
-      font-weight:800;
-      text-transform:uppercase;
-      letter-spacing:.16em;
-      font-size:13px;
-    }
-    .meta{
-      margin-left:auto;
-      text-align:right;
-      color:#6e7b88;
-      font-size:13px;
-      line-height:1.45;
-    }
-    .period{
-      margin:10px 0 20px;
-      text-align:center;
-      font-size:18px;
-      font-weight:900;
-      color:#304255;
-    }
-    .summary{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:14px;
-      margin-bottom:18px;
-    }
-    .summary-3{
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:14px;
-      margin-bottom:18px;
-    }
-    .card{
-      background:#fff;
-      border:1px solid #dfe7f0;
-      border-radius:22px;
-      padding:18px 18px;
-      break-inside:avoid;
-      page-break-inside:avoid;
-    }
-    .cardTitle{
-      color:#6e7b88;
-      font-size:12px;
-      letter-spacing:.10em;
-      text-transform:uppercase;
-      font-weight:900;
-      margin-bottom:10px;
-    }
-    .cardValue{
-      color:#102033;
-      font-size:30px;
-      font-weight:900;
-      line-height:1.1;
-    }
-    .sectionTitle{
-      margin:8px 0 12px;
-      text-align:center;
-      font-size:22px;
-      font-weight:900;
-      color:#102033;
-    }
-    .list{
-      display:grid;
-      gap:12px;
-    }
-    .row{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-    }
-    .name{
-      font-size:20px;
-      font-weight:900;
-      color:#102033;
-      line-height:1.1;
-    }
-    .sub{
-      margin-top:6px;
-      color:#6e7b88;
-      font-size:13px;
-      line-height:1.45;
-    }
-    .amount{
-      font-size:28px;
-      font-weight:900;
-      color:#102033;
-      white-space:nowrap;
-      text-align:right;
-    }
-    .badge{
-      display:inline-flex;
-      margin-top:10px;
-      padding:7px 12px;
-      border-radius:999px;
-      background:#eef4fb;
-      color:#234261;
-      font-size:12px;
-      font-weight:900;
-    }
-    .legend-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:12px;
-      margin-top:10px;
-    }
-    .legend-item{
-      display:flex;
-      justify-content:space-between;
-      gap:10px;
-      padding:12px 14px;
-      border-radius:16px;
-      background:#f7fafc;
-      border:1px solid #e7edf4;
-      font-weight:800;
-    }
-    .footer{
-      margin-top:18px;
-      padding-top:14px;
-      border-top:1px solid #e4ebf3;
-      color:#7c8794;
-      font-size:12px;
-      display:flex;
-      justify-content:space-between;
-      gap:12px;
-    }
-    @page{size:A4;margin:11mm}
-    @media print{
-      body{padding:0;background:#fff}
-      .doc{box-shadow:none;border-radius:0;padding:0}
-    }
-  </style>`;
-}
-
-function openPremiumDocument(title, html, autoPrint=false) {
-  const win = window.open("", "_blank");
-  if (!win) { alert("Consenti le finestre popup per continuare."); return; }
-  win.document.open();
-  win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>${title}</title>${exportCssBlock()}</head><body>${html}</body></html>`);
-  win.document.close();
-  win.focus();
-  if (autoPrint) setTimeout(() => win.print(), 250);
-}
-
-function html2pdfExport(filename, html) {
-  if (typeof html2pdf === "undefined") {
-    openPremiumDocument(filename, html, false);
-    return;
-  }
-  const temp = document.createElement("div");
-  temp.innerHTML = html;
-  document.body.appendChild(temp);
-  const node = temp.querySelector(".doc") || temp;
-  html2pdf().set({
-    margin: 0,
-    filename,
-    image: { type: "jpeg", quality: 0.98 },
-    html2canvas: { scale: 2, useCORS: true, backgroundColor: "#eef3f7" },
-    jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-    pagebreak: { mode: ["css","legacy"] }
-  }).from(node).save().then(() => temp.remove()).catch(() => temp.remove());
-}
-
-function buildReportExportHtml() {
-  if (typeof renderReport === "function") renderReport();
-  const period = (document.getElementById("reportPeriodoLabel")?.textContent || "Periodo selezionato").trim();
-  const cards = Array.from(document.querySelectorAll("#reportCards .report-card, #reportCards .card")).map((card) => {
-    const title = (card.querySelector(".report-card-title, p, .card-title")?.textContent || "").trim();
-    const value = (card.querySelector(".report-card-value, h2, h3, strong")?.textContent || card.textContent || "").trim();
-    return `<div class="card"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
-  }).join("");
-
-  const legendRows = Array.from(document.querySelectorAll("#reportPieWrap .pie-legend-item, #reportPieWrap .legend-row, #reportPieWrap .category-row")).map((row) => {
-    const left = row.children[0] ? row.children[0].textContent.trim() : row.textContent.trim();
-    const right = row.children[1] ? row.children[1].textContent.trim() : "";
-    return `<div class="legend-item"><span>${left}</span><strong>${right}</strong></div>`;
-  }).join("");
-
-  return `
-    <div class="doc">
-      <div class="head">
-        <img src="${getBrandLogoSrc()}" alt="ANVAMED">
-        <div>
-          <h1>Report ANVAMED</h1>
-          <p>Manager</p>
-        </div>
-        <div class="meta">
-          <div>${new Date().toLocaleDateString("it-IT")}</div>
-          <div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div>
-        </div>
-      </div>
-      <div class="period">${period}</div>
-      <div class="summary">${cards}</div>
-      ${legendRows ? `<div class="sectionTitle">Riepilogo dettagliato</div><div class="legend-grid">${legendRows}</div>` : ""}
-      <div class="footer">
-        <span>Documento generato da ANVAMED Manager</span>
-        <span>${location.origin || ""}</span>
-      </div>
-    </div>`;
-}
-
-function buildInvoicesExportHtml() {
-  if (typeof renderInvoices === "function") renderInvoices();
-  const period = (document.getElementById("fatturePeriodoLabel")?.textContent || "Fatture del periodo").trim();
-  const summary = Array.from(document.querySelectorAll("#fattureSummary .report-card, #fattureSummary .card")).map((card) => {
-    const title = (card.querySelector(".report-card-title, p, .card-title")?.textContent || "").trim();
-    const value = (card.querySelector(".report-card-value, h2, h3, strong")?.textContent || card.textContent || "").trim();
-    return `<div class="card"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
-  }).join("");
-
-  const items = Array.from(document.querySelectorAll("#fattureList .fattura-card, #fattureList .card")).map((card) => {
-    const title = (card.querySelector("h3, .fattura-name, .doctor-name, strong")?.textContent || "Medico").trim();
-    const sub = (card.querySelector(".fattura-sub, .small-note, p, .sub")?.textContent || "").trim();
-    const amount = (card.querySelector(".fattura-total, .amount, .report-card-value")?.textContent || "").trim();
-    const status = (card.querySelector(".fattura-status-btn, .badge, .status")?.textContent || "").trim();
-    return `<div class="card"><div class="row"><div><div class="name">${title}</div><div class="sub">${sub}</div>${status ? `<div class="badge">${status}</div>` : ""}</div><div class="amount">${amount}</div></div></div>`;
-  }).join("");
-
-  return `
-    <div class="doc">
-      <div class="head">
-        <img src="${getBrandLogoSrc()}" alt="ANVAMED">
-        <div>
-          <h1>Fatture ANVAMED</h1>
-          <p>Manager</p>
-        </div>
-        <div class="meta">
-          <div>${new Date().toLocaleDateString("it-IT")}</div>
-          <div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div>
-        </div>
-      </div>
-      <div class="period">${period}</div>
-      <div class="summary-3">${summary}</div>
-      <div class="sectionTitle">Dettaglio medici</div>
-      <div class="list">${items}</div>
-      <div class="footer">
-        <span>Documento generato da ANVAMED Manager</span>
-        <span>${location.origin || ""}</span>
-      </div>
-    </div>`;
-}
-
-function printReport() { openPremiumDocument("Report ANVAMED", buildReportExportHtml(), true); }
-function printInvoices() { openPremiumDocument("Fatture ANVAMED", buildInvoicesExportHtml(), true); }
-function exportReportPdf() { html2pdfExport(`report-anvamed-${new Date().toISOString().slice(0,10)}.pdf`, buildReportExportHtml()); }
-function exportInvoicesPdf() { html2pdfExport(`fatture-anvamed-${new Date().toISOString().slice(0,10)}.pdf`, buildInvoicesExportHtml()); }
-
-
-document.addEventListener("DOMContentLoaded", () => {
-  const reportBtn = document.getElementById("printReportBtn");
-  if (reportBtn && !reportBtn.dataset.boundPremiumExport) {
-    reportBtn.dataset.boundPremiumExport = "1";
-    reportBtn.addEventListener("click", (e) => { e.preventDefault(); printReport(); });
-  }
-  const invBtn = document.getElementById("printInvoicesBtn");
-  if (invBtn && !invBtn.dataset.boundPremiumExport) {
-    invBtn.dataset.boundPremiumExport = "1";
-    invBtn.addEventListener("click", (e) => { e.preventDefault(); printInvoices(); });
-  }
-  const pdfReportBtn = document.getElementById("pdfReportBtn");
-  if (pdfReportBtn && !pdfReportBtn.dataset.boundPremiumExport) {
-    pdfReportBtn.dataset.boundPremiumExport = "1";
-    pdfReportBtn.addEventListener("click", (e) => { e.preventDefault(); exportReportPdf(); });
-  }
-  const pdfInvoicesBtn = document.getElementById("pdfInvoicesBtn");
-  if (pdfInvoicesBtn && !pdfInvoicesBtn.dataset.boundPremiumExport) {
-    pdfInvoicesBtn.dataset.boundPremiumExport = "1";
-    pdfInvoicesBtn.addEventListener("click", (e) => { e.preventDefault(); exportInvoicesPdf(); });
-  }
-});
-
-
-
-/* --- Targeted premium export override --- */
+/* --- Registrazione premium fix --- */
 (function(){
-  function brandLogo(){
-    const img = document.querySelector(".brand-logo");
-    return img ? img.getAttribute("src") : "anvamed.jpg";
+  const originalApply = window.applyRegisteredPercentForPopup;
+  if (typeof originalApply === "function" && !originalApply.__priceFixWrapped) {
+    const wrapped = function(){
+      const result = originalApply.apply(this, arguments);
+      const doctorId = Number(document.getElementById("popupDoctorSelect")?.value || 0);
+      const prestazione = String(document.getElementById("popupPrestazione")?.value || "").trim();
+      if (!doctorId || !prestazione || typeof findDoctorPrestazione !== "function") return result;
+      const cfg = findDoctorPrestazione(doctorId, prestazione);
+      if (!cfg) return result;
+      const importoEl = document.getElementById("popupImporto");
+      if (importoEl && !editingEntryId) {
+        importoEl.value = Number.isFinite(Number(cfg.prezzo)) ? Number(cfg.prezzo).toFixed(2) : "0";
+      }
+      if (typeof updatePopupPreview === "function") updatePopupPreview();
+      return result;
+    };
+    wrapped.__priceFixWrapped = true;
+    window.applyRegisteredPercentForPopup = wrapped;
   }
-
-  function findChartPng(selectors){
-    for (const sel of selectors) {
-      try {
-        const el = document.querySelector(sel);
-        if (el && typeof el.toDataURL === "function") return el.toDataURL("image/png");
-      } catch(e) {}
-    }
-    return "";
-  }
-
-  function premiumDocCss(){
-    return `
-    <style>
-      *{box-sizing:border-box}
-      body{margin:0;padding:20px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(180deg,#edf4fb 0%,#f8fbff 100%);color:#17212b}
-      .topbar{position:sticky;top:0;z-index:10;max-width:980px;margin:0 auto 16px;display:flex;justify-content:space-between;gap:12px}
-      .navbtn{border:none;border-radius:999px;background:#ffffff;color:#17304d;padding:12px 16px;font-weight:900;box-shadow:0 6px 18px rgba(16,32,51,.08);cursor:pointer}
-      .doc{max-width:980px;margin:0 auto;background:#fff;border-radius:28px;padding:30px 30px 22px;box-shadow:0 12px 34px rgba(18,33,52,.10);border:1px solid #e3ebf4}
-      .head{display:flex;align-items:center;gap:18px;padding-bottom:18px;border-bottom:1px solid #e4ebf3;margin-bottom:18px}
-      .head img{width:80px;height:80px;border-radius:22px;object-fit:cover;box-shadow:0 4px 16px rgba(27,44,70,.08)}
-      .brand h1{margin:0;font-size:40px;line-height:1;color:#102033}
-      .brand p{margin:7px 0 0;color:#6e7b88;font-weight:800;text-transform:uppercase;letter-spacing:.16em;font-size:13px}
-      .meta{margin-left:auto;text-align:right;color:#6e7b88;font-size:13px;line-height:1.5}
-      .period{margin:6px 0 22px;text-align:center;font-size:18px;font-weight:900;color:#304255;background:#f7fafc;border:1px solid #e6edf5;border-radius:16px;padding:12px 14px}
-      .summary2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-bottom:18px}
-      .summary3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;margin-bottom:18px}
-      .card{background:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);border:1px solid #dfe7f0;border-radius:22px;padding:18px;break-inside:avoid;page-break-inside:avoid;box-shadow:0 6px 18px rgba(16,32,51,.04)}
-      .cardTitle{color:#6e7b88;font-size:12px;letter-spacing:.10em;text-transform:uppercase;font-weight:900;margin-bottom:10px}
-      .cardValue{color:#102033;font-size:30px;font-weight:900;line-height:1.1}
-      .sectionTitle{margin:12px 0 14px;text-align:center;font-size:22px;font-weight:900;color:#102033}
-      .chartWrap{margin:18px auto 8px;border:1px solid #e5ecf4;border-radius:24px;padding:18px;background:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);text-align:center}
-      .chartWrap img{max-width:100%;max-height:420px;object-fit:contain;border-radius:18px}
-      .list{display:grid;gap:12px}
-      .row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
-      .name{font-size:20px;font-weight:900;color:#102033;line-height:1.1}
-      .sub{margin-top:6px;color:#6e7b88;font-size:13px;line-height:1.45}
-      .amount{font-size:28px;font-weight:900;color:#102033;white-space:nowrap;text-align:right}
-      .badge{display:inline-flex;margin-top:10px;padding:7px 12px;border-radius:999px;background:#eef4fb;color:#234261;font-size:12px;font-weight:900}
-      .legend{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px}
-      .legendItem{display:flex;justify-content:space-between;gap:10px;padding:12px 14px;border-radius:16px;background:#f7fafc;border:1px solid #e7edf4;font-weight:800}
-      .footer{margin-top:18px;padding-top:14px;border-top:1px solid #e4ebf3;color:#7c8794;font-size:12px;display:flex;justify-content:space-between;gap:12px}
-      @page{size:A4;margin:11mm}
-      @media print{body{padding:0;background:#fff}.topbar{display:none}.doc{box-shadow:none;border-radius:0;padding:0;border:none}}
-    </style>`;
-  }
-
-  function topbarHtml(){
-    return `<div class="topbar">
-      <button class="navbtn" onclick="window.close(); if(!window.closed){ history.back(); }">✕ Chiudi</button>
-      <button class="navbtn" onclick="window.print()">🖨️ Stampa</button>
-    </div>`;
-  }
-
-  function openPremiumWindow(title, bodyHtml, autoPrint){
-    const win = window.open("", "_blank");
-    if (!win) { alert("Consenti le finestre popup per continuare."); return; }
-    win.document.open();
-    win.document.write(`<!DOCTYPE html><html lang="it"><head><meta charset="UTF-8"><title>${title}</title>${premiumDocCss()}</head><body>${topbarHtml()}${bodyHtml}</body></html>`);
-    win.document.close();
-    win.focus();
-    if (autoPrint) setTimeout(() => win.print(), 250);
-  }
-
-  function savePdf(filename, bodyHtml){
-    if (typeof html2pdf === "undefined") {
-      openPremiumWindow(filename, bodyHtml, false);
-      return;
-    }
-    const temp = document.createElement("div");
-    temp.innerHTML = bodyHtml;
-    document.body.appendChild(temp);
-    const node = temp.querySelector(".doc") || temp;
-    html2pdf().set({
-      margin: 0,
-      filename,
-      image: { type: "jpeg", quality: 0.98 },
-      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#edf4fb" },
-      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
-      pagebreak: { mode: ["css","legacy"] }
-    }).from(node).save().then(() => temp.remove()).catch(() => temp.remove());
-  }
-
-  function reportHtml(){
-    if (typeof renderReport === "function") renderReport();
-    const period = (document.getElementById("reportPeriodoLabel")?.textContent || "Periodo selezionato").trim();
-    const cards = Array.from(document.querySelectorAll("#reportCards .report-card, #reportCards .card")).map(card => {
-      const title = (card.querySelector(".report-card-title, p, .card-title")?.textContent || "").trim();
-      const value = (card.querySelector(".report-card-value, h2, h3, strong")?.textContent || card.textContent || "").trim();
-      return `<div class="card"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
-    }).join("");
-
-    const legend = Array.from(document.querySelectorAll("#reportPieWrap .pie-legend-item, #reportPieWrap .legend-row, #reportPieWrap .category-row")).map(row => {
-      const left = row.children[0] ? row.children[0].textContent.trim() : row.textContent.trim();
-      const right = row.children[1] ? row.children[1].textContent.trim() : "";
-      return `<div class="legendItem"><span>${left}</span><strong>${right}</strong></div>`;
-    }).join("");
-
-    const chart = findChartPng(["#chart1", "#reportChart", "#reportPieCanvas", "#reportPage canvas"]);
-    return `
-      <div class="doc">
-        <div class="head">
-          <img src="${brandLogo()}" alt="ANVAMED">
-          <div class="brand"><h1>Report ANVAMED</h1><p>Manager</p></div>
-          <div class="meta"><div>${new Date().toLocaleDateString("it-IT")}</div><div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div></div>
-        </div>
-        <div class="period">${period}</div>
-        <div class="summary2">${cards}</div>
-        ${chart ? `<div class="sectionTitle">Grafico</div><div class="chartWrap"><img src="${chart}" alt="Grafico report"></div>` : ""}
-        ${legend ? `<div class="sectionTitle">Riepilogo dettagliato</div><div class="legend">${legend}</div>` : ""}
-        <div class="footer"><span>Documento generato da ANVAMED Manager</span><span>${location.origin || ""}</span></div>
-      </div>`;
-  }
-
-  function invoicesHtml(){
-    if (typeof renderInvoices === "function") renderInvoices();
-    const period = (document.getElementById("fatturePeriodoLabel")?.textContent || "Fatture del periodo").trim();
-    const summary = Array.from(document.querySelectorAll("#fattureSummary .report-card, #fattureSummary .card")).map(card => {
-      const title = (card.querySelector(".report-card-title, p, .card-title")?.textContent || "").trim();
-      const value = (card.querySelector(".report-card-value, h2, h3, strong")?.textContent || card.textContent || "").trim();
-      return `<div class="card"><div class="cardTitle">${title}</div><div class="cardValue">${value}</div></div>`;
-    }).join("");
-
-    const items = Array.from(document.querySelectorAll("#fattureList .fattura-card, #fattureList .card")).map(card => {
-      const title = (card.querySelector("h3, .fattura-name, .doctor-name, strong")?.textContent || "Medico").trim();
-      const sub = (card.querySelector(".fattura-sub, .small-note, p, .sub")?.textContent || "").trim();
-      const amount = (card.querySelector(".fattura-total, .amount, .report-card-value")?.textContent || "").trim();
-      const status = (card.querySelector(".fattura-status-btn, .badge, .status")?.textContent || "").trim();
-      return `<div class="card"><div class="row"><div><div class="name">${title}</div><div class="sub">${sub}</div>${status ? `<div class="badge">${status}</div>` : ""}</div><div class="amount">${amount}</div></div></div>`;
-    }).join("");
-
-    const chart = findChartPng(["#chart2", "#fattureChart", "#fattureCanvas", "#fatturePage canvas"]);
-    return `
-      <div class="doc">
-        <div class="head">
-          <img src="${brandLogo()}" alt="ANVAMED">
-          <div class="brand"><h1>Fatture ANVAMED</h1><p>Manager</p></div>
-          <div class="meta"><div>${new Date().toLocaleDateString("it-IT")}</div><div>${new Date().toLocaleTimeString("it-IT",{hour:"2-digit",minute:"2-digit"})}</div></div>
-        </div>
-        <div class="period">${period}</div>
-        <div class="summary3">${summary}</div>
-        ${chart ? `<div class="sectionTitle">Grafico</div><div class="chartWrap"><img src="${chart}" alt="Grafico fatture"></div>` : ""}
-        <div class="sectionTitle">Dettaglio medici</div>
-        <div class="list">${items}</div>
-        <div class="footer"><span>Documento generato da ANVAMED Manager</span><span>${location.origin || ""}</span></div>
-      </div>`;
-  }
-
-  window.__premiumPrintReport = function(){ openPremiumWindow("Report ANVAMED", reportHtml(), true); };
-  window.__premiumPrintInvoices = function(){ openPremiumWindow("Fatture ANVAMED", invoicesHtml(), true); };
-  window.__premiumPdfReport = function(){ savePdf(`report-anvamed-${new Date().toISOString().slice(0,10)}.pdf`, reportHtml()); };
-  window.__premiumPdfInvoices = function(){ savePdf(`fatture-anvamed-${new Date().toISOString().slice(0,10)}.pdf`, invoicesHtml()); };
-
-  document.addEventListener("click", function(e){
-    const t = e.target;
-    if (!t) return;
-    if (t.id === "printReportBtn") { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); window.__premiumPrintReport(); }
-    if (t.id === "printInvoicesBtn") { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); window.__premiumPrintInvoices(); }
-    if (t.id === "pdfReportBtn") { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); window.__premiumPdfReport(); }
-    if (t.id === "pdfInvoicesBtn") { e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation(); window.__premiumPdfInvoices(); }
-  }, true);
 })();
